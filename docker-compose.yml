@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  # Frontend Next.js
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: logoali-frontend
+    env_file:
+      - .env.local
+    environment:
+      WATCHPACK_POLLING: "true"
+      NEXT_PUBLIC_API_URL: "http://localhost:3001"
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - logoali-network
+    command: npm run dev
+    restart: unless-stopped
+
+networks:
+  logoali-network:
+    driver: bridge
+    # A rede será criada se não existir, ou reutilizada se já existir (criada pelo backend)
+
