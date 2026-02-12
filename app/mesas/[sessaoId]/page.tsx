@@ -92,6 +92,10 @@ export default function SessaoMesaPage() {
   const [pedidoCancelando, setPedidoCancelando] = useState<string | null>(null)
   const [motivoCancelamento, setMotivoCancelamento] = useState('')
 
+  // Modais de feedback
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+
   const loadData = useCallback(async () => {
     try {
       const [sessaoRes, produtosRes] = await Promise.all([
@@ -121,7 +125,7 @@ export default function SessaoMesaPage() {
 
   const handleCriarConta = async () => {
     if (!novoApelido.trim()) {
-      alert('Digite um apelido para a conta')
+      setErrorMessage('Digite um apelido para a conta')
       return
     }
     try {
@@ -132,18 +136,18 @@ export default function SessaoMesaPage() {
       setNovoApelido('')
       loadData()
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao criar conta')
+      setErrorMessage(error.response?.data?.message || 'Erro ao criar conta')
     }
   }
 
   const handleSelecionarProduto = async (produto: Produto) => {
     if (!selectedConta) {
-      alert('Selecione uma conta primeiro')
+      setErrorMessage('Selecione uma conta primeiro')
       return
     }
     const contaAtual = sessao?.contas.find((c) => c.id === selectedConta)
     if (contaAtual?.status === 'FECHADA') {
-      alert('Esta conta ja foi fechada')
+      setErrorMessage('Esta conta ja foi fechada')
       return
     }
     setProdutoSelecionado(produto)
@@ -176,7 +180,7 @@ export default function SessaoMesaPage() {
       setProdutoSelecionado(null)
       loadData()
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao adicionar pedido')
+      setErrorMessage(error.response?.data?.message || 'Erro ao adicionar pedido')
     }
   }
 
@@ -214,7 +218,7 @@ export default function SessaoMesaPage() {
       (c) => c.status === 'ABERTA' && contasSelecionadas.has(c.id)
     )
     if (contas.length === 0) {
-      alert('Selecione ao menos uma conta aberta')
+      setErrorMessage('Selecione ao menos uma conta aberta')
       return
     }
     abrirModalFechamento(contas)
@@ -225,7 +229,7 @@ export default function SessaoMesaPage() {
     if (!sessao) return
     const contas = sessao.contas.filter((c) => c.status === 'ABERTA')
     if (contas.length === 0) {
-      alert('Nao ha contas abertas')
+      setErrorMessage('Nao ha contas abertas')
       return
     }
     abrirModalFechamento(contas)
@@ -242,7 +246,7 @@ export default function SessaoMesaPage() {
     const totalContas = contasFechando.reduce((acc, conta) => acc + calcularTotalConta(conta), 0)
 
     if (totalPago < totalContas - 0.01) {
-      alert(
+      setErrorMessage(
         `Valor pago (R$ ${totalPago.toFixed(2)}) e menor que o total (R$ ${totalContas.toFixed(2)})`
       )
       return
@@ -263,14 +267,14 @@ export default function SessaoMesaPage() {
       setContasSelecionadas(new Set())
 
       if (response.data.sessaoFechada) {
-        alert('Todas as contas pagas! Mesa liberada.')
-        router.push('/mesas')
+        setSuccessMessage('Todas as contas pagas! Mesa liberada.')
+        setTimeout(() => router.push('/mesas'), 2000)
       } else {
-        alert('Conta(s) fechada(s) com sucesso!')
+        setSuccessMessage('Conta(s) fechada(s) com sucesso!')
         loadData()
       }
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao fechar conta')
+      setErrorMessage(error.response?.data?.message || 'Erro ao fechar conta')
     }
   }
 
@@ -282,7 +286,7 @@ export default function SessaoMesaPage() {
 
   const handleConfirmarCancelamento = async () => {
     if (!pedidoCancelando || !motivoCancelamento.trim()) {
-      alert('Informe o motivo do cancelamento')
+      setErrorMessage('Informe o motivo do cancelamento')
       return
     }
 
@@ -294,7 +298,7 @@ export default function SessaoMesaPage() {
       setPedidoCancelando(null)
       loadData()
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao cancelar pedido')
+      setErrorMessage(error.response?.data?.message || 'Erro ao cancelar pedido')
     }
   }
 
@@ -910,6 +914,48 @@ export default function SessaoMesaPage() {
                 Confirmar Cancelamento
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Erro */}
+      {errorMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-red-50 rounded-lg border-2 border-black p-6 w-full max-w-md mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                ✕
+              </div>
+              <h2 className="text-xl font-bold text-red-800">Erro</h2>
+            </div>
+            <p className="text-gray-800 mb-6">{errorMessage}</p>
+            <button
+              onClick={() => setErrorMessage(null)}
+              className="w-full py-2 bg-red-500 text-white rounded-md font-bold hover:bg-red-600 transition border-2 border-black"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Sucesso */}
+      {successMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-green-50 rounded-lg border-2 border-black p-6 w-full max-w-md mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                ✓
+              </div>
+              <h2 className="text-xl font-bold text-green-800">Sucesso</h2>
+            </div>
+            <p className="text-gray-800 mb-6">{successMessage}</p>
+            <button
+              onClick={() => setSuccessMessage(null)}
+              className="w-full py-2 bg-green-500 text-white rounded-md font-bold hover:bg-green-600 transition border-2 border-black"
+            >
+              Fechar
+            </button>
           </div>
         </div>
       )}

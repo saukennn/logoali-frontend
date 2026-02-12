@@ -52,6 +52,8 @@ export default function BalcaoPage() {
   const [obsTemp, setObsTemp] = useState('')
   const [qtdTemp, setQtdTemp] = useState(1)
   const [enviando, setEnviando] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const user = getUser()
 
   useEffect(() => {
@@ -129,8 +131,9 @@ export default function BalcaoPage() {
       }
       setCarrinho([])
       loadData()
+      setSuccessMessage('Pedidos enviados com sucesso!')
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao enviar pedidos')
+      setErrorMessage(error.response?.data?.message || 'Erro ao enviar pedidos')
     } finally {
       setEnviando(false)
     }
@@ -143,8 +146,9 @@ export default function BalcaoPage() {
     try {
       await api.patch(`/pedidos/${pedidoId}/cancelar`, { motivoCancelamento: motivo })
       loadData()
+      setSuccessMessage('Pedido cancelado com sucesso!')
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao cancelar pedido')
+      setErrorMessage(error.response?.data?.message || 'Erro ao cancelar pedido')
     }
   }
 
@@ -451,6 +455,52 @@ export default function BalcaoPage() {
                 Adicionar
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Erro */}
+      {errorMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-red-500 rounded-lg border-2 border-black p-6 w-full max-w-md mx-4">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white flex items-center justify-center">
+                <span className="text-red-500 text-2xl font-bold">✕</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-white mb-2">Erro</h3>
+                <p className="text-white">{errorMessage}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setErrorMessage('')}
+              className="w-full mt-4 bg-red-600 hover:bg-red-700 text-white py-2 rounded-md border-2 border-black font-bold transition"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Sucesso */}
+      {successMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-green-500 rounded-lg border-2 border-black p-6 w-full max-w-md mx-4">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-white flex items-center justify-center">
+                <span className="text-green-500 text-2xl font-bold">✓</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-white mb-2">Sucesso</h3>
+                <p className="text-white">{successMessage}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setSuccessMessage('')}
+              className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white py-2 rounded-md border-2 border-black font-bold transition"
+            >
+              Fechar
+            </button>
           </div>
         </div>
       )}

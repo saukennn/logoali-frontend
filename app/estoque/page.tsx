@@ -55,6 +55,8 @@ export default function EstoquePage() {
   const [filtroCategoria, setFiltroCategoria] = useState<string>('')
   const [busca, setBusca] = useState('')
   const [mostrarEstoqueBaixo, setMostrarEstoqueBaixo] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string>('')
+  const [successMessage, setSuccessMessage] = useState<string>('')
 
   useEffect(() => {
     loadItens()
@@ -103,7 +105,7 @@ export default function EstoquePage() {
       setSelectedItem(null)
       loadItens()
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao excluir item')
+      setErrorMessage(error.response?.data?.message || 'Erro ao excluir item')
     }
   }
 
@@ -421,6 +423,52 @@ export default function EstoquePage() {
           onClose={() => setShowHistoricoModal(false)}
         />
       )}
+
+      {/* Modal de Erro */}
+      {errorMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-red-500 border-2 border-black rounded-lg p-8 w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
+                <span className="text-red-500 text-4xl font-bold">✕</span>
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold mb-4 text-white text-center">Erro</h2>
+            <p className="text-white text-center mb-6">{errorMessage}</p>
+            <div className="flex justify-center">
+              <button
+                onClick={() => setErrorMessage('')}
+                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-md border-2 border-black"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Sucesso */}
+      {successMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-green-500 border-2 border-black rounded-lg p-8 w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
+                <span className="text-green-500 text-4xl font-bold">✓</span>
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold mb-4 text-white text-center">Sucesso</h2>
+            <p className="text-white text-center mb-6">{successMessage}</p>
+            <div className="flex justify-center">
+              <button
+                onClick={() => setSuccessMessage('')}
+                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-md border-2 border-black"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   )
 }
@@ -694,6 +742,8 @@ function ItemModal({
     observacoes: '',
   })
   const [loading, setLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string>('')
+  const [successMessage, setSuccessMessage] = useState<string>('')
 
   useEffect(() => {
     if (item) {
@@ -747,7 +797,7 @@ function ItemModal({
       }
       onSave()
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao salvar item')
+      setErrorMessage(error.response?.data?.message || 'Erro ao salvar item')
     } finally {
       setLoading(false)
     }
@@ -868,6 +918,52 @@ function ItemModal({
             </button>
           </div>
         </form>
+
+        {/* Modal de Erro */}
+        {errorMessage && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-red-500 border-2 border-black rounded-lg p-8 w-full max-w-md shadow-2xl">
+              <div className="flex items-center justify-center mb-4">
+                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
+                  <span className="text-red-500 text-4xl font-bold">✕</span>
+                </div>
+              </div>
+              <h2 className="text-2xl font-bold mb-4 text-white text-center">Erro</h2>
+              <p className="text-white text-center mb-6">{errorMessage}</p>
+              <div className="flex justify-center">
+                <button
+                  onClick={() => setErrorMessage('')}
+                  className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-md border-2 border-black"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Sucesso */}
+        {successMessage && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-green-500 border-2 border-black rounded-lg p-8 w-full max-w-md shadow-2xl">
+              <div className="flex items-center justify-center mb-4">
+                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
+                  <span className="text-green-500 text-4xl font-bold">✓</span>
+                </div>
+              </div>
+              <h2 className="text-2xl font-bold mb-4 text-white text-center">Sucesso</h2>
+              <p className="text-white text-center mb-6">{successMessage}</p>
+              <div className="flex justify-center">
+                <button
+                  onClick={() => setSuccessMessage('')}
+                  className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-md border-2 border-black"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -890,6 +986,8 @@ function MovimentacaoModal({
     observacoes: '',
   })
   const [loading, setLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string>('')
+  const [successMessage, setSuccessMessage] = useState<string>('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -904,7 +1002,7 @@ function MovimentacaoModal({
       })
       onSave()
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao registrar movimentação')
+      setErrorMessage(error.response?.data?.message || 'Erro ao registrar movimentação')
     } finally {
       setLoading(false)
     }
@@ -985,6 +1083,52 @@ function MovimentacaoModal({
             </button>
           </div>
         </form>
+
+        {/* Modal de Erro */}
+        {errorMessage && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-red-500 border-2 border-black rounded-lg p-8 w-full max-w-md shadow-2xl">
+              <div className="flex items-center justify-center mb-4">
+                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
+                  <span className="text-red-500 text-4xl font-bold">✕</span>
+                </div>
+              </div>
+              <h2 className="text-2xl font-bold mb-4 text-white text-center">Erro</h2>
+              <p className="text-white text-center mb-6">{errorMessage}</p>
+              <div className="flex justify-center">
+                <button
+                  onClick={() => setErrorMessage('')}
+                  className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-md border-2 border-black"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Sucesso */}
+        {successMessage && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-green-500 border-2 border-black rounded-lg p-8 w-full max-w-md shadow-2xl">
+              <div className="flex items-center justify-center mb-4">
+                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
+                  <span className="text-green-500 text-4xl font-bold">✓</span>
+                </div>
+              </div>
+              <h2 className="text-2xl font-bold mb-4 text-white text-center">Sucesso</h2>
+              <p className="text-white text-center mb-6">{successMessage}</p>
+              <div className="flex justify-center">
+                <button
+                  onClick={() => setSuccessMessage('')}
+                  className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-md border-2 border-black"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

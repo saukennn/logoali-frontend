@@ -31,6 +31,8 @@ export default function MesasPage() {
   const user = getUser()
   const [mesas, setMesas] = useState<Mesa[]>([])
   const [loading, setLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   const loadMesas = useCallback(async () => {
     try {
@@ -57,7 +59,7 @@ export default function MesasPage() {
       })
       router.push(`/mesas/${response.data.id}`)
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao abrir mesa')
+      setErrorMessage(error.response?.data?.message || 'Erro ao abrir mesa')
     }
   }
 
@@ -136,6 +138,42 @@ export default function MesasPage() {
           })}
         </div>
       </div>
+
+      {/* Modal de erro */}
+      {errorMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-red-500 rounded-lg p-6 max-w-md w-full border-2 border-black">
+            <div className="flex items-center justify-center mb-4">
+              <div className="text-white text-4xl font-bold">✕</div>
+            </div>
+            <p className="text-white text-center mb-6 font-semibold">{errorMessage}</p>
+            <button
+              onClick={() => setErrorMessage(null)}
+              className="w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors border-2 border-black font-bold"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de sucesso */}
+      {successMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-green-500 rounded-lg p-6 max-w-md w-full border-2 border-black">
+            <div className="flex items-center justify-center mb-4">
+              <div className="text-white text-4xl font-bold">✓</div>
+            </div>
+            <p className="text-white text-center mb-6 font-semibold">{successMessage}</p>
+            <button
+              onClick={() => setSuccessMessage(null)}
+              className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors border-2 border-black font-bold"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
     </Layout>
   )
 }

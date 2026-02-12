@@ -47,6 +47,7 @@ export default function LoginPage() {
               {...register('email', { required: 'Email é obrigatório' })}
               className="w-full px-4 py-3 border-2 border-black rounded-md focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 text-black bg-white placeholder-gray-400"
               placeholder="seu@email.com"
+              disabled={loading}
             />
             {errors.email && (
               <p className="text-red-500 text-sm mt-1 font-medium">{errors.email.message}</p>
@@ -59,6 +60,7 @@ export default function LoginPage() {
               {...register('senha', { required: 'Senha é obrigatória' })}
               className="w-full px-4 py-3 border-2 border-black rounded-md focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 text-black bg-white placeholder-gray-400"
               placeholder="••••••••"
+              disabled={loading}
             />
             {errors.senha && (
               <p className="text-red-500 text-sm mt-1 font-medium">{errors.senha.message}</p>
@@ -78,6 +80,19 @@ export default function LoginPage() {
           </button>
         </form>
       </div>
+
+      {/* Overlay de Loading */}
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 shadow-2xl border-2 border-black">
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-lg font-bold text-black">Fazendo login...</p>
+              <p className="text-sm text-gray-600">Aguarde um momento</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

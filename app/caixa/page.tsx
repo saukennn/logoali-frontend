@@ -51,6 +51,8 @@ export default function CaixaPage() {
   const [showAbrirModal, setShowAbrirModal] = useState(false)
   const [showFecharModal, setShowFecharModal] = useState(false)
   const [observacaoFechamento, setObservacaoFechamento] = useState('')
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const user = getUser()
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<MovimentoForm>()
@@ -81,7 +83,7 @@ export default function CaixaPage() {
       setShowAbrirModal(false)
       loadCaixa()
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao abrir caixa')
+      setErrorMessage(error.response?.data?.message || 'Erro ao abrir caixa')
     }
   }
 
@@ -94,7 +96,7 @@ export default function CaixaPage() {
       setObservacaoFechamento('')
       loadCaixa()
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao fechar caixa')
+      setErrorMessage(error.response?.data?.message || 'Erro ao fechar caixa')
     }
   }
 
@@ -107,7 +109,7 @@ export default function CaixaPage() {
       reset()
       loadCaixa()
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao registrar movimento')
+      setErrorMessage(error.response?.data?.message || 'Erro ao registrar movimento')
     }
   }
 
@@ -363,6 +365,44 @@ export default function CaixaPage() {
                 Confirmar Fechamento
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Erro */}
+      {errorMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-red-500 rounded-lg border-2 border-black p-6 w-full max-w-md mx-4">
+            <div className="flex items-center mb-4">
+              <span className="text-4xl text-white mr-3">✕</span>
+              <h2 className="text-xl font-bold text-white">Erro</h2>
+            </div>
+            <p className="text-white mb-6">{errorMessage}</p>
+            <button
+              onClick={() => setErrorMessage(null)}
+              className="w-full bg-red-700 text-white py-2 rounded-md border-2 border-black font-bold hover:bg-red-800 transition"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Sucesso */}
+      {successMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-green-500 rounded-lg border-2 border-black p-6 w-full max-w-md mx-4">
+            <div className="flex items-center mb-4">
+              <span className="text-4xl text-white mr-3">✓</span>
+              <h2 className="text-xl font-bold text-white">Sucesso</h2>
+            </div>
+            <p className="text-white mb-6">{successMessage}</p>
+            <button
+              onClick={() => setSuccessMessage(null)}
+              className="w-full bg-green-700 text-white py-2 rounded-md border-2 border-black font-bold hover:bg-green-800 transition"
+            >
+              Fechar
+            </button>
           </div>
         </div>
       )}
