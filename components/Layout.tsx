@@ -33,6 +33,7 @@ import {
   Menu as MenuIcon,
   Logout as LogoutIcon,
   Person as PersonIcon,
+  Assessment as RelatoriosIcon,
 } from '@mui/icons-material'
 
 const DRAWER_WIDTH = 280
@@ -47,6 +48,7 @@ const menuItems = [
   { text: 'Balcao', icon: <BalcaoIcon />, path: '/balcao', adminOnly: false },
   { text: 'Estoque', icon: <InventoryIcon />, path: '/estoque', adminOnly: false },
   { text: 'Financeiro', icon: <FinanceiroIcon />, path: '/financeiro', adminOnly: false },
+  { text: 'Relatórios', icon: <RelatoriosIcon />, path: '/relatorios', adminOnly: true },
   { text: 'Caixa', icon: <CaixaIcon />, path: '/caixa', adminOnly: true },
   { text: 'Produtos', icon: <ProdutosIcon />, path: '/produtos', adminOnly: true },
 ]
