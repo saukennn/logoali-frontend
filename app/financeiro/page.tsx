@@ -13,14 +13,25 @@ interface ItemEstoque {
   precoCompra?: number
   precoVenda?: number
   ativo: boolean
+  tipo?: 'ESTOQUE' | 'PRODUTO'
 }
 
+interface Produto {
+  id: string
+  nome: string
+  preco: number
+  setor: string
+  ativo: boolean
+}
+
+type ItemFinanceiro = ItemEstoque | (Produto & { tipo: 'PRODUTO' })
+
 export default function FinanceiroPage() {
-  const [itens, setItens] = useState<ItemEstoque[]>([])
+  const [itens, setItens] = useState<ItemFinanceiro[]>([])
   const [loading, setLoading] = useState(true)
   const [filtroCategoria, setFiltroCategoria] = useState<string>('')
   const [busca, setBusca] = useState('')
-  const [itemEditando, setItemEditando] = useState<ItemEstoque | null>(null)
+  const [itemEditando, setItemEditando] = useState<ItemFinanceiro | null>(null)
   const [formData, setFormData] = useState({
     precoCompra: '',
     precoVenda: '',
@@ -33,13 +44,49 @@ export default function FinanceiroPage() {
   const loadItens = async () => {
     try {
       setLoading(true)
-      const params = new URLSearchParams()
-      if (filtroCategoria) params.append('categoria', filtroCategoria)
-      if (busca) params.append('busca', busca)
-      params.append('ativo', 'true')
+      
+      // Buscar itens de estoque
+      const paramsEstoque = new URLSearchParams()
+      if (filtroCategoria) paramsEstoque.append('categoria', filtroCategoria)
+      if (busca) paramsEstoque.append('busca', busca)
+      paramsEstoque.append('ativo', 'true')
 
-      const response = await api.get(`/estoque/itens?${params.toString()}`)
-      setItens(response.data)
+      const [responseEstoque, responseProdutos] = await Promise.all([
+        api.get(`/estoque/itens?${paramsEstoque.toString()}`),
+        api.get('/produtos')
+      ])
+
+      const itensEstoque: ItemFinanceiro[] = responseEstoque.data.map((item: ItemEstoque) => ({
+        ...item,
+        tipo: 'ESTOQUE' as const
+      }))
+
+      // Filtrar produtos se houver busca
+      let produtosFiltrados = responseProdutos.data
+      if (busca) {
+        produtosFiltrados = produtosFiltrados.filter((produto: Produto) =>
+          produto.nome.toLowerCase().includes(busca.toLowerCase())
+        )
+      }
+
+      const produtos: ItemFinanceiro[] = produtosFiltrados.map((produto: Produto) => ({
+        id: produto.id,
+        nome: produto.nome,
+        categoria: produto.setor,
+        unidadeMedida: '-',
+        precoVenda: Number(produto.preco),
+        ativo: produto.ativo,
+        tipo: 'PRODUTO' as const,
+        codigo: undefined,
+        precoCompra: undefined
+      }))
+
+      // Combinar e ordenar por nome
+      const todosItens = [...itensEstoque, ...produtos].sort((a, b) => 
+        a.nome.localeCompare(b.nome)
+      )
+
+      setItens(todosItens)
     } catch (error) {
       console.error('Erro ao carregar itens:', error)
     } finally {
@@ -47,22 +94,39 @@ export default function FinanceiroPage() {
     }
   }
 
-  const handleEditarPrecos = (item: ItemEstoque) => {
+  const handleEditarPrecos = (item: ItemFinanceiro) => {
     setItemEditando(item)
-    setFormData({
-      precoCompra: item.precoCompra?.toString() || '',
-      precoVenda: item.precoVenda?.toString() || '',
-    })
+    if (item.tipo === 'PRODUTO') {
+      // Para produtos, só permite editar preço de venda
+      setFormData({
+        precoCompra: '',
+        precoVenda: item.precoVenda?.toString() || '',
+      })
+    } else {
+      // Para itens de estoque, permite editar ambos
+      setFormData({
+        precoCompra: item.precoCompra?.toString() || '',
+        precoVenda: item.precoVenda?.toString() || '',
+      })
+    }
   }
 
   const handleSalvarPrecos = async () => {
     if (!itemEditando) return
 
     try {
-      await api.patch(`/estoque/itens/${itemEditando.id}`, {
-        precoCompra: formData.precoCompra ? parseFloat(formData.precoCompra) : undefined,
-        precoVenda: formData.precoVenda ? parseFloat(formData.precoVenda) : undefined,
-      })
+      if (itemEditando.tipo === 'PRODUTO') {
+        // Atualizar produto - apenas preço de venda
+        await api.patch(`/produtos/${itemEditando.id}`, {
+          preco: formData.precoVenda ? parseFloat(formData.precoVenda) : undefined,
+        })
+      } else {
+        // Atualizar item de estoque
+        await api.patch(`/estoque/itens/${itemEditando.id}`, {
+          precoCompra: formData.precoCompra ? parseFloat(formData.precoCompra) : undefined,
+          precoVenda: formData.precoVenda ? parseFloat(formData.precoVenda) : undefined,
+        })
+      }
       setItemEditando(null)
       loadItens()
     } catch (error: any) {
@@ -145,13 +209,16 @@ export default function FinanceiroPage() {
                   <thead className="bg-black">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase">
+                        Tipo
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase">
                         Código
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase">
                         Nome
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase">
-                        Categoria
+                        Categoria/Setor
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase">
                         Preço Compra
@@ -171,6 +238,15 @@ export default function FinanceiroPage() {
                     {itens.map((item) => (
                       <tr key={item.id}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
+                          <span className={`px-2 py-1 text-xs font-bold rounded ${
+                            item.tipo === 'PRODUTO' 
+                              ? 'bg-purple-100 text-purple-800' 
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {item.tipo === 'PRODUTO' ? 'PRODUTO' : 'ESTOQUE'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
                           {item.codigo || '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
@@ -178,9 +254,15 @@ export default function FinanceiroPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
-                            className={`px-2 py-1 text-xs font-bold rounded ${getCategoriaColor(
-                              item.categoria,
-                            )}`}
+                            className={`px-2 py-1 text-xs font-bold rounded ${
+                              item.tipo === 'PRODUTO'
+                                ? item.categoria === 'CHAPA' 
+                                  ? 'bg-orange-100 text-orange-800'
+                                  : item.categoria === 'COZINHA'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-blue-100 text-blue-800'
+                                : getCategoriaColor(item.categoria)
+                            }`}
                           >
                             {item.categoria}
                           </span>
@@ -213,7 +295,7 @@ export default function FinanceiroPage() {
                             onClick={() => handleEditarPrecos(item)}
                             className="text-orange-500 hover:text-orange-600 font-bold"
                           >
-                            Editar Preços
+                            {item.tipo === 'PRODUTO' ? 'Editar Preço' : 'Editar Preços'}
                           </button>
                         </td>
                       </tr>
@@ -231,10 +313,16 @@ export default function FinanceiroPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white border-2 border-black rounded-lg p-8 w-full max-w-md shadow-2xl">
             <h2 className="text-2xl font-bold mb-4 text-black">
-              Editar Preços - {itemEditando.nome}
+              {itemEditando.tipo === 'PRODUTO' ? 'Editar Preço de Venda' : 'Editar Preços'} - {itemEditando.nome}
             </h2>
             <p className="text-sm text-gray-600 mb-6">
-              <strong>Código:</strong> {itemEditando.codigo}
+              <strong>Tipo:</strong> {itemEditando.tipo === 'PRODUTO' ? 'Produto' : 'Item de Estoque'}
+              {itemEditando.codigo && (
+                <>
+                  <br />
+                  <strong>Código:</strong> {itemEditando.codigo}
+                </>
+              )}
             </p>
             <form
               onSubmit={(e) => {
@@ -243,21 +331,23 @@ export default function FinanceiroPage() {
               }}
               className="space-y-4"
             >
-              <div>
-                <label className="block text-sm font-bold mb-1 text-black">
-                  Preço de Compra (R$)
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.precoCompra}
-                  onChange={(e) =>
-                    setFormData({ ...formData, precoCompra: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border-2 border-black rounded-md text-black bg-white placeholder-gray-400"
-                  placeholder="0.00"
-                />
-              </div>
+              {itemEditando.tipo === 'ESTOQUE' && (
+                <div>
+                  <label className="block text-sm font-bold mb-1 text-black">
+                    Preço de Compra (R$)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formData.precoCompra}
+                    onChange={(e) =>
+                      setFormData({ ...formData, precoCompra: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border-2 border-black rounded-md text-black bg-white placeholder-gray-400"
+                    placeholder="0.00"
+                  />
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-bold mb-1 text-black">
                   Preço de Venda (R$)
@@ -271,9 +361,10 @@ export default function FinanceiroPage() {
                   }
                   className="w-full px-3 py-2 border-2 border-black rounded-md text-black bg-white placeholder-gray-400"
                   placeholder="0.00"
+                  required
                 />
               </div>
-              {formData.precoCompra && formData.precoVenda && (
+              {itemEditando.tipo === 'ESTOQUE' && formData.precoCompra && formData.precoVenda && (
                 <div className="p-3 bg-gray-50 border-2 border-black rounded-md">
                   <p className="text-sm text-black">
                     <strong>Margem:</strong>{' '}

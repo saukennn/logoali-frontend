@@ -29,6 +29,7 @@ import {
   TableRestaurant as MesasIcon,
   PointOfSale as CaixaIcon,
   Restaurant as ProdutosIcon,
+  Storefront as BalcaoIcon,
   Menu as MenuIcon,
   Logout as LogoutIcon,
   Person as PersonIcon,
@@ -43,6 +44,7 @@ interface LayoutProps {
 const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard', adminOnly: false },
   { text: 'Mesas', icon: <MesasIcon />, path: '/mesas', adminOnly: false },
+  { text: 'Balcao', icon: <BalcaoIcon />, path: '/balcao', adminOnly: false },
   { text: 'Estoque', icon: <InventoryIcon />, path: '/estoque', adminOnly: false },
   { text: 'Financeiro', icon: <FinanceiroIcon />, path: '/financeiro', adminOnly: false },
   { text: 'Caixa', icon: <CaixaIcon />, path: '/caixa', adminOnly: true },
