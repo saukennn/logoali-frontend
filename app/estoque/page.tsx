@@ -29,19 +29,21 @@ const converterParaUnidades = (quantidade: number, unidadeMedida: string): numbe
 const formatarQuantidade = (item: ItemEstoque): string => {
   const qtd = Number(item.quantidadeAtual)
   if (item.unidadeMedida === 'CAIXA') {
-    const unidades = converterParaUnidades(qtd, item.unidadeMedida)
-    return `${unidades} unidades (${qtd} caixa${qtd !== 1 ? 's' : ''})`
+    const unidades = Math.round(converterParaUnidades(qtd, item.unidadeMedida))
+    const caixas = qtd.toFixed(2)
+    return `${unidades} unidades (${caixas} caixa${qtd !== 1 ? 's' : ''})`
   }
-  return `${qtd} ${item.unidadeMedida.toLowerCase()}`
+  return `${qtd.toFixed(2)} ${item.unidadeMedida.toLowerCase()}`
 }
 
 const formatarQuantidadeMinima = (item: ItemEstoque): string => {
   const qtd = Number(item.quantidadeMinima)
   if (item.unidadeMedida === 'CAIXA') {
-    const unidades = converterParaUnidades(qtd, item.unidadeMedida)
-    return `${unidades} unidades (${qtd} caixa${qtd !== 1 ? 's' : ''})`
+    const unidades = Math.round(converterParaUnidades(qtd, item.unidadeMedida))
+    const caixas = qtd.toFixed(2)
+    return `${unidades} unidades (${caixas} caixa${qtd !== 1 ? 's' : ''})`
   }
-  return `${qtd} ${item.unidadeMedida.toLowerCase()}`
+  return `${qtd.toFixed(2)} ${item.unidadeMedida.toLowerCase()}`
 }
 
 export default function EstoquePage() {
