@@ -44,22 +44,9 @@ export default function FinanceiroPage() {
   const loadItens = async () => {
     try {
       setLoading(true)
-      
-      // Buscar itens de estoque
-      const paramsEstoque = new URLSearchParams()
-      if (filtroCategoria) paramsEstoque.append('categoria', filtroCategoria)
-      if (busca) paramsEstoque.append('busca', busca)
-      paramsEstoque.append('ativo', 'true')
 
-      const [responseEstoque, responseProdutos] = await Promise.all([
-        api.get(`/estoque/itens?${paramsEstoque.toString()}`),
-        api.get('/produtos')
-      ])
-
-      const itensEstoque: ItemFinanceiro[] = responseEstoque.data.map((item: ItemEstoque) => ({
-        ...item,
-        tipo: 'ESTOQUE' as const
-      }))
+      // Buscar apenas produtos (menu de vendas)
+      const responseProdutos = await api.get('/produtos')
 
       // Filtrar produtos se houver busca
       let produtosFiltrados = responseProdutos.data
@@ -81,8 +68,8 @@ export default function FinanceiroPage() {
         precoCompra: undefined
       }))
 
-      // Combinar e ordenar por nome
-      const todosItens = [...itensEstoque, ...produtos].sort((a, b) => 
+      // Ordenar produtos por nome
+      const todosItens = produtos.sort((a, b) =>
         a.nome.localeCompare(b.nome)
       )
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Layout from '@/components/Layout'
 import api from '@/lib/api'
 import { useForm } from 'react-hook-form'
+import ComposicaoModal from '@/components/ComposicaoModal'
 
 interface Produto {
   id: string
@@ -30,6 +31,9 @@ export default function ProdutosPage() {
   const [produtoEditando, setProdutoEditando] = useState<Produto | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [produtoExcluindo, setProdutoExcluindo] = useState<Produto | null>(null)
+  const [produtoComposicao, setProdutoComposicao] = useState<Produto | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const { register, handleSubmit, reset, formState: { errors } } = useForm<ProdutoForm>()
   const { register: registerEdit, handleSubmit: handleSubmitEdit, reset: resetEdit, formState: { errors: errorsEdit }, setValue: setValueEdit } = useForm<ProdutoEditForm>()
 
@@ -43,6 +47,7 @@ export default function ProdutosPage() {
       setProdutos(response.data)
     } catch (error) {
       console.error('Erro ao carregar produtos:', error)
+      setErrorMessage('Erro ao carregar produtos')
     } finally {
       setLoading(false)
     }
@@ -53,8 +58,9 @@ export default function ProdutosPage() {
       await api.post('/produtos', data)
       reset()
       loadProdutos()
+      setSuccessMessage('Produto criado com sucesso!')
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao criar produto')
+      setErrorMessage(error.response?.data?.message || 'Erro ao criar produto')
     }
   }
 
@@ -72,8 +78,9 @@ export default function ProdutosPage() {
       setProdutoEditando(null)
       resetEdit()
       loadProdutos()
+      setSuccessMessage('Produto editado com sucesso!')
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao editar produto')
+      setErrorMessage(error.response?.data?.message || 'Erro ao editar produto')
     }
   }
 
@@ -90,9 +97,16 @@ export default function ProdutosPage() {
       setShowDeleteModal(false)
       setProdutoExcluindo(null)
       loadProdutos()
+      setSuccessMessage('Produto excluído com sucesso!')
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Erro ao excluir produto')
+      setShowDeleteModal(false)
+      setProdutoExcluindo(null)
+      setErrorMessage(error.response?.data?.message || 'Erro ao excluir produto')
     }
+  }
+
+  const handleComposicaoClick = (produto: Produto) => {
+    setProdutoComposicao(produto)
   }
 
   if (loading) {
@@ -164,19 +178,26 @@ export default function ProdutosPage() {
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {produtos.map((produto) => (
                 <div key={produto.id} className="p-3 border rounded">
-                  <div className="flex justify-between items-center">
-                    <div className="flex-1">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex-1 min-w-0">
                       <p className="font-medium">{produto.nome}</p>
                       <p className="text-sm text-gray-600">R$ {Number(produto.preco).toFixed(2)}</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2 py-1 rounded text-xs ${
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`px-2 py-1 rounded text-xs whitespace-nowrap ${
                         produto.setor === 'CHAPA' ? 'bg-orange-100 text-orange-800' :
                         produto.setor === 'COZINHA' ? 'bg-red-100 text-red-800' :
                         'bg-blue-100 text-blue-800'
                       }`}>
                         {produto.setor}
                       </span>
+                      <button
+                        onClick={() => handleComposicaoClick(produto)}
+                        className="px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 whitespace-nowrap"
+                        title="Gerenciar composição/estoque"
+                      >
+                        Composição
+                      </button>
                       <button
                         onClick={() => handleEditar(produto)}
                         className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
@@ -294,9 +315,68 @@ export default function ProdutosPage() {
           </div>
         </div>
       )}
+
+      {/* Modal de Composição */}
+      {produtoComposicao && (
+        <ComposicaoModal
+          produto={produtoComposicao}
+          onClose={() => setProdutoComposicao(null)}
+          onSave={() => {
+            loadProdutos()
+            setSuccessMessage('Composição salva com sucesso!')
+          }}
+        />
+      )}
+
+      {/* Modal de Erro */}
+      {errorMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <span className="text-red-600 text-xl">✕</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Erro</h3>
+                <p className="text-gray-600">{errorMessage}</p>
+              </div>
+            </div>
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setErrorMessage(null)}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Sucesso */}
+      {successMessage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                <span className="text-green-600 text-xl">✓</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Sucesso</h3>
+                <p className="text-gray-600">{successMessage}</p>
+              </div>
+            </div>
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setSuccessMessage(null)}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   )
 }
-
-
-
