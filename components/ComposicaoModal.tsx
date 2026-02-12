@@ -179,10 +179,13 @@ export default function ComposicaoModal({ produto, onClose, onSave }: Composicao
               </div>
 
               {composicao.length === 0 ? (
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                  <p className="text-gray-600">Nenhum item na composição</p>
-                  <p className="text-sm text-red-600 mt-2">
-                    ⚠️ Produtos sem composição não podem ser vendidos
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                  <p className="text-gray-700 mb-2">Nenhum item na composição</p>
+                  <p className="text-sm text-blue-700">
+                    ℹ️ Este produto será vendido sem controle automático de estoque
+                  </p>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Ideal para produtos simples como bebidas, que não precisam de composição
                   </p>
                 </div>
               ) : (
@@ -283,9 +286,9 @@ export default function ComposicaoModal({ produto, onClose, onSave }: Composicao
       {confirmRemoveAll && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
           <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
-            <h3 className="text-lg font-bold mb-2">⚠️ Atenção</h3>
+            <h3 className="text-lg font-bold mb-2">ℹ️ Confirmar Remoção</h3>
             <p className="text-gray-700 mb-4">
-              Você está removendo toda a composição deste produto. Isso impedirá que novos pedidos sejam criados para este produto. Deseja continuar?
+              Você está removendo toda a composição deste produto. O produto continuará vendável, mas sem controle automático de estoque. Deseja continuar?
             </p>
             <div className="flex justify-end gap-3">
               <button
