@@ -24,7 +24,7 @@ interface Produto {
   ativo: boolean
 }
 
-type ItemFinanceiro = ItemEstoque | (Produto & { tipo: 'PRODUTO' })
+type ItemFinanceiro = ItemEstoque
 
 export default function FinanceiroPage() {
   const [itens, setItens] = useState<ItemFinanceiro[]>([])
