@@ -141,34 +141,32 @@ export default function FinanceiroPage() {
 
   return (
     <Layout>
-      <div className="px-4 py-6 sm:px-0">
+      <div className="py-6">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8 text-black">
-            Controle <span className="text-orange-500">Financeiro</span>
-          </h1>
-          <p className="text-gray-600 mb-6">
-            Gerencie os preços de compra e venda dos itens do estoque
-          </p>
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-gray-900">Financeiro</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Gerencie os preços de venda dos produtos</p>
+          </div>
 
           {/* Filtros */}
-          <div className="bg-white border-2 border-black rounded-lg p-4 mb-6 shadow-lg">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 mb-5 shadow-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-bold mb-2 text-black">Buscar</label>
+                <label className="block text-sm font-semibold mb-1.5 text-gray-700">Buscar</label>
                 <input
                   type="text"
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
-                  placeholder="Nome ou código..."
-                  className="w-full px-3 py-2 border-2 border-black rounded-md focus:outline-none focus:border-orange-500 text-black bg-white placeholder-gray-400"
+                  placeholder="Nome do produto..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold mb-2 text-black">Categoria</label>
+                <label className="block text-sm font-semibold mb-1.5 text-gray-700">Categoria</label>
                 <select
                   value={filtroCategoria}
                   onChange={(e) => setFiltroCategoria(e.target.value)}
-                  className="w-full px-3 py-2 border-2 border-black rounded-md focus:outline-none focus:border-orange-500 text-black bg-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
                 >
                   <option value="">Todas</option>
                   <option value="BEBIDAS">Bebidas</option>
@@ -183,107 +181,71 @@ export default function FinanceiroPage() {
 
           {/* Tabela de itens */}
           {loading ? (
-            <div className="text-center py-12">
-              <p className="text-gray-600">Carregando...</p>
+            <div className="flex items-center justify-center py-16">
+              <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : itens.length === 0 ? (
-            <div className="bg-white border-2 border-black rounded-lg p-12 text-center shadow-lg">
-              <p className="text-gray-600 text-lg">Nenhum item encontrado</p>
+            <div className="bg-white border border-gray-200 rounded-xl p-12 text-center shadow-sm">
+              <p className="text-gray-400 text-sm">Nenhum item encontrado</p>
             </div>
           ) : (
-            <div className="bg-white border-2 border-black rounded-lg shadow-lg overflow-hidden">
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-black">
-                  <thead className="bg-black">
+                <table className="min-w-full divide-y divide-gray-100">
+                  <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase">
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Tipo
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase">
-                        Código
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase">
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Nome
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase">
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Categoria/Setor
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase">
-                        Preço Compra
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase">
+                      <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Preço Venda
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase">
-                        Margem
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase">
+                      <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Ações
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white divide-y divide-gray-50">
                     {itens.map((item) => (
-                      <tr key={item.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
-                          <span className={`px-2 py-1 text-xs font-bold rounded ${
-                            item.tipo === 'PRODUTO' 
-                              ? 'bg-purple-100 text-purple-800' 
-                              : 'bg-gray-100 text-gray-800'
+                      <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <span className={`px-2 py-0.5 text-xs font-semibold rounded ${
+                            item.tipo === 'PRODUTO' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-700'
                           }`}>
                             {item.tipo === 'PRODUTO' ? 'PRODUTO' : 'ESTOQUE'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
-                          {item.codigo || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                        <td className="px-5 py-3 text-sm font-medium text-gray-900">
                           {item.nome}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`px-2 py-1 text-xs font-bold rounded ${
-                              item.tipo === 'PRODUTO'
-                                ? item.categoria === 'CHAPA' 
-                                  ? 'bg-orange-100 text-orange-800'
-                                  : item.categoria === 'COZINHA'
-                                  ? 'bg-red-100 text-red-800'
-                                  : 'bg-blue-100 text-blue-800'
-                                : getCategoriaColor(item.categoria)
-                            }`}
-                          >
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <span className={`px-2 py-0.5 text-xs font-semibold rounded ${
+                            item.tipo === 'PRODUTO'
+                              ? item.categoria === 'CHAPA'
+                                ? 'bg-orange-100 text-orange-800'
+                                : item.categoria === 'COZINHA'
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-blue-100 text-blue-800'
+                              : getCategoriaColor(item.categoria)
+                          }`}>
                             {item.categoria}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-black font-medium">
-                          {item.precoCompra
-                            ? `R$ ${Number(item.precoCompra).toFixed(2)}`
-                            : '-'}
+                        <td className="px-5 py-3 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
+                          {item.precoVenda ? `R$ ${Number(item.precoVenda).toFixed(2)}` : '-'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-black font-medium">
-                          {item.precoVenda
-                            ? `R$ ${Number(item.precoVenda).toFixed(2)}`
-                            : '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-bold">
-                          <span
-                            className={
-                              item.precoCompra && item.precoVenda
-                                ? Number(item.precoVenda) >= Number(item.precoCompra)
-                                  ? 'text-green-600'
-                                  : 'text-red-600'
-                                : 'text-gray-500'
-                            }
-                          >
-                            {calcularMargem(item.precoCompra, item.precoVenda)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <td className="px-5 py-3 whitespace-nowrap text-right">
                           <button
                             onClick={() => handleEditarPrecos(item)}
-                            className="text-orange-500 hover:text-orange-600 font-bold"
+                            className="px-2.5 py-1 text-xs font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-md transition-colors"
                           >
-                            {item.tipo === 'PRODUTO' ? 'Editar Preço' : 'Editar Preços'}
+                            Editar Preço
                           </button>
                         </td>
                       </tr>
@@ -298,90 +260,70 @@ export default function FinanceiroPage() {
 
       {/* Modal de Edição de Preços */}
       {itemEditando && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white border-2 border-black rounded-lg p-8 w-full max-w-md shadow-2xl">
-            <h2 className="text-2xl font-bold mb-4 text-black">
-              {itemEditando.tipo === 'PRODUTO' ? 'Editar Preço de Venda' : 'Editar Preços'} - {itemEditando.nome}
-            </h2>
-            <p className="text-sm text-gray-600 mb-6">
-              <strong>Tipo:</strong> {itemEditando.tipo === 'PRODUTO' ? 'Produto' : 'Item de Estoque'}
-              {itemEditando.codigo && (
-                <>
-                  <br />
-                  <strong>Código:</strong> {itemEditando.codigo}
-                </>
-              )}
-            </p>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 className="text-lg font-bold text-gray-900">
+                Editar Preço — {itemEditando.nome}
+              </h2>
+            </div>
             <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                handleSalvarPrecos()
-              }}
-              className="space-y-4"
+              onSubmit={(e) => { e.preventDefault(); handleSalvarPrecos() }}
+              className="p-6 space-y-4"
             >
               {itemEditando.tipo === 'ESTOQUE' && (
                 <div>
-                  <label className="block text-sm font-bold mb-1 text-black">
+                  <label className="block text-sm font-semibold mb-1.5 text-gray-700">
                     Preço de Compra (R$)
                   </label>
                   <input
                     type="number"
                     step="0.01"
                     value={formData.precoCompra}
-                    onChange={(e) =>
-                      setFormData({ ...formData, precoCompra: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border-2 border-black rounded-md text-black bg-white placeholder-gray-400"
+                    onChange={(e) => setFormData({ ...formData, precoCompra: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                     placeholder="0.00"
                   />
                 </div>
               )}
               <div>
-                <label className="block text-sm font-bold mb-1 text-black">
+                <label className="block text-sm font-semibold mb-1.5 text-gray-700">
                   Preço de Venda (R$)
                 </label>
                 <input
                   type="number"
                   step="0.01"
                   value={formData.precoVenda}
-                  onChange={(e) =>
-                    setFormData({ ...formData, precoVenda: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border-2 border-black rounded-md text-black bg-white placeholder-gray-400"
+                  onChange={(e) => setFormData({ ...formData, precoVenda: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                   placeholder="0.00"
                   required
                 />
               </div>
               {itemEditando.tipo === 'ESTOQUE' && formData.precoCompra && formData.precoVenda && (
-                <div className="p-3 bg-gray-50 border-2 border-black rounded-md">
-                  <p className="text-sm text-black">
-                    <strong>Margem:</strong>{' '}
-                    <span
-                      className={
-                        parseFloat(formData.precoVenda) >= parseFloat(formData.precoCompra)
-                          ? 'text-green-600 font-bold'
-                          : 'text-red-600 font-bold'
-                      }
-                    >
-                      {calcularMargem(
-                        parseFloat(formData.precoCompra),
-                        parseFloat(formData.precoVenda),
-                      )}
+                <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    Margem:{' '}
+                    <span className={`font-bold ${
+                      parseFloat(formData.precoVenda) >= parseFloat(formData.precoCompra)
+                        ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {calcularMargem(parseFloat(formData.precoCompra), parseFloat(formData.precoVenda))}
                     </span>
                   </p>
                 </div>
               )}
-              <div className="flex justify-end gap-3 pt-4">
+              <div className="flex gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setItemEditando(null)}
-                  className="px-6 py-2 border-2 border-black text-black font-bold rounded-md hover:bg-gray-100"
+                  className="flex-1 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-md border-2 border-black"
+                  className="flex-1 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold transition-colors"
                 >
                   Salvar
                 </button>
@@ -393,25 +335,21 @@ export default function FinanceiroPage() {
 
       {/* Modal de Erro */}
       {errorMessage && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl border-2 border-black">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                <span className="text-red-600 text-xl font-bold">✕</span>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <span className="text-red-600 font-bold text-sm">✕</span>
               </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Erro</h3>
-                <p className="text-gray-600">{errorMessage}</p>
-              </div>
+              <h3 className="font-semibold text-gray-900">Erro</h3>
             </div>
-            <div className="flex justify-end mt-6">
-              <button
-                onClick={() => setErrorMessage(null)}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-bold border-2 border-black"
-              >
-                Fechar
-              </button>
-            </div>
+            <p className="text-sm text-gray-600 mb-5">{errorMessage}</p>
+            <button
+              onClick={() => setErrorMessage(null)}
+              className="w-full py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition-colors"
+            >
+              Fechar
+            </button>
           </div>
         </div>
       )}

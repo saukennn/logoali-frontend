@@ -113,39 +113,26 @@ export default function EstoquePage() {
 
   return (
     <Layout>
-      <div className="px-4 py-6 sm:px-0">
+      <div className="py-6">
         <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-black">
-              Gestão de <span className="text-orange-500">Estoque</span>
-            </h1>
-            <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Estoque</h1>
+              <p className="text-sm text-gray-500 mt-0.5">{itens.length} item{itens.length !== 1 ? 'ns' : ''} cadastrado{itens.length !== 1 ? 's' : ''}</p>
+            </div>
+            <div className="flex gap-2">
               <button
                 onClick={() => setShowHistoricoModal(true)}
-                className="bg-black hover:bg-gray-800 text-white font-bold py-2 px-4 rounded-lg border-2 border-orange-500 shadow-lg transition-colors flex items-center gap-2"
-                title="Ver histórico"
+                className="bg-white hover:bg-gray-50 text-gray-700 font-semibold py-2 px-4 rounded-lg border border-gray-300 shadow-sm transition-colors flex items-center gap-2 text-sm"
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 Histórico
               </button>
               <button
-                onClick={() => {
-                  setSelectedItem(null)
-                  setShowModal(true)
-                }}
-                className="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg border-2 border-black shadow-lg transition-colors"
+                onClick={() => { setSelectedItem(null); setShowModal(true) }}
+                className="bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors text-sm"
               >
                 + Novo Item
               </button>
@@ -153,24 +140,24 @@ export default function EstoquePage() {
           </div>
 
           {/* Filtros */}
-          <div className="bg-white border-2 border-black rounded-lg p-4 mb-6 shadow-lg">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 mb-5 shadow-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-bold mb-2 text-black">Buscar</label>
+                <label className="block text-sm font-semibold mb-1.5 text-gray-700">Buscar</label>
                 <input
                   type="text"
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
                   placeholder="Nome ou código..."
-                  className="w-full px-3 py-2 border-2 border-black rounded-md focus:outline-none focus:border-orange-500 text-black bg-white placeholder-gray-400"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold mb-2 text-black">Categoria</label>
+                <label className="block text-sm font-semibold mb-1.5 text-gray-700">Categoria</label>
                 <select
                   value={filtroCategoria}
                   onChange={(e) => setFiltroCategoria(e.target.value)}
-                  className="w-full px-3 py-2 border-2 border-black rounded-md focus:outline-none focus:border-orange-500 text-black bg-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
                 >
                   <option value="">Todas</option>
                   <option value="BEBIDAS">Bebidas</option>
@@ -179,16 +166,14 @@ export default function EstoquePage() {
                 </select>
               </div>
               <div className="flex items-end">
-                <label className="flex items-center cursor-pointer">
+                <label className="flex items-center cursor-pointer gap-2">
                   <input
                     type="checkbox"
                     checked={mostrarEstoqueBaixo}
                     onChange={(e) => setMostrarEstoqueBaixo(e.target.checked)}
-                    className="w-5 h-5 mr-2 border-2 border-black"
+                    className="w-4 h-4 accent-orange-500"
                   />
-                  <span className="text-sm font-bold text-black">
-                    Apenas estoque baixo
-                  </span>
+                  <span className="text-sm font-medium text-gray-700">Apenas estoque baixo</span>
                 </label>
               </div>
             </div>
@@ -196,151 +181,93 @@ export default function EstoquePage() {
 
           {/* Alerta de estoque baixo */}
           {itensEstoqueBaixo.length > 0 && !mostrarEstoqueBaixo && (
-            <div className="bg-red-50 border-2 border-red-500 rounded-lg p-4 mb-6">
-              <p className="text-red-700 font-bold">
-                ⚠️ {itensEstoqueBaixo.length} item(ns) com estoque baixo!
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5">
+              <p className="text-red-700 font-semibold text-sm">
+                ⚠️ {itensEstoqueBaixo.length} item{itensEstoqueBaixo.length !== 1 ? 'ns' : ''} com estoque baixo
               </p>
             </div>
           )}
 
           {/* Tabela de itens */}
           {loading ? (
-            <div className="text-center py-12">
-              <p className="text-gray-600">Carregando...</p>
+            <div className="flex items-center justify-center py-16">
+              <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : itens.length === 0 ? (
-            <div className="bg-white border-2 border-black rounded-lg p-12 text-center shadow-lg">
-              <p className="text-gray-600 text-lg">Nenhum item encontrado</p>
+            <div className="bg-white border border-gray-200 rounded-xl p-12 text-center shadow-sm">
+              <p className="text-gray-400 text-sm">Nenhum item encontrado</p>
             </div>
           ) : (
-            <div className="bg-white border-2 border-black rounded-lg shadow-lg overflow-hidden">
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-black">
-                  <thead className="bg-black">
+                <table className="min-w-full divide-y divide-gray-100">
+                  <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase">
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Código
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase">
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Nome
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase">
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Categoria
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase">
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Quantidade
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase">
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Mínima
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-bold text-white uppercase">
+                      <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Ações
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white divide-y divide-gray-50">
                     {itens.map((item) => (
-                      <tr
-                        key={item.id}
-                        className={isEstoqueBaixo(item) ? 'bg-red-50' : ''}
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
+                      <tr key={item.id} className={`hover:bg-gray-50 transition-colors ${isEstoqueBaixo(item) ? 'bg-red-50 hover:bg-red-50' : ''}`}>
+                        <td className="px-5 py-3 whitespace-nowrap text-sm text-gray-500 font-mono">
                           {item.codigo || '-'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                        <td className="px-5 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                           {item.nome}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`px-2 py-1 text-xs font-bold rounded ${getCategoriaColor(
-                              item.categoria,
-                            )}`}
-                          >
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <span className={`px-2 py-0.5 text-xs font-semibold rounded ${getCategoriaColor(item.categoria)}`}>
                             {item.categoria}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`text-sm font-bold ${
-                              isEstoqueBaixo(item)
-                                ? 'text-red-600'
-                                : 'text-black'
-                            }`}
-                          >
+                        <td className="px-5 py-3 whitespace-nowrap">
+                          <span className={`text-sm font-semibold ${isEstoqueBaixo(item) ? 'text-red-600' : 'text-gray-800'}`}>
                             {formatarQuantidade(item)}
                             {isEstoqueBaixo(item) && ' ⚠️'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        <td className="px-5 py-3 whitespace-nowrap text-sm text-gray-400">
                           {formatarQuantidadeMinima(item)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center gap-3">
+                        <td className="px-5 py-3 whitespace-nowrap text-sm font-medium">
+                          <div className="flex items-center gap-1.5">
                             <button
-                              onClick={() => {
-                                setSelectedItem(item)
-                                setShowMovimentacaoModal(true)
-                              }}
-                              className="text-orange-500 hover:text-orange-600 transition-colors"
-                              title="Movimentar estoque"
+                              onClick={() => { setSelectedItem(item); setShowMovimentacaoModal(true) }}
+                              className="px-2.5 py-1 text-xs font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-md transition-colors"
+                              title="Movimentar"
                             >
-                              <svg
-                                className="w-5 h-5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
-                                />
-                              </svg>
+                              Mover
                             </button>
                             <button
-                              onClick={() => {
-                                setSelectedItem(item)
-                                setShowModal(true)
-                              }}
-                              className="text-blue-500 hover:text-blue-600 transition-colors"
-                              title="Editar item"
+                              onClick={() => { setSelectedItem(item); setShowModal(true) }}
+                              className="px-2.5 py-1 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
+                              title="Editar"
                             >
-                              <svg
-                                className="w-5 h-5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                />
-                              </svg>
+                              Editar
                             </button>
                             <button
-                              onClick={() => {
-                                setSelectedItem(item)
-                                setShowDeleteModal(true)
-                              }}
-                              className="text-red-500 hover:text-red-600 transition-colors"
-                              title="Excluir item"
+                              onClick={() => { setSelectedItem(item); setShowDeleteModal(true) }}
+                              className="px-2.5 py-1 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
+                              title="Excluir"
                             >
-                              <svg
-                                className="w-5 h-5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M6 18L18 6M6 6l12 12"
-                                />
-                              </svg>
+                              Excluir
                             </button>
                           </div>
                         </td>

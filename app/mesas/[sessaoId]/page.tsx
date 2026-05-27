@@ -341,7 +341,7 @@ export default function SessaoMesaPage() {
 
   return (
     <Layout>
-      <div className="px-4 py-6 sm:px-0">
+      <div className="py-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>

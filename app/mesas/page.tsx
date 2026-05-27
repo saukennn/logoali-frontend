@@ -33,6 +33,8 @@ export default function MesasPage() {
   const [loading, setLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [mesaParaAbrir, setMesaParaAbrir] = useState<Mesa | null>(null)
+  const [abrindo, setAbrindo] = useState(false)
 
   const loadMesas = useCallback(async () => {
     try {
@@ -51,15 +53,20 @@ export default function MesasPage() {
     return () => clearInterval(interval)
   }, [loadMesas])
 
-  const handleAbrirMesa = async (mesaId: string) => {
+  const handleAbrirMesa = async () => {
+    if (!mesaParaAbrir || abrindo) return
+    setAbrindo(true)
     try {
       const response = await api.post('/sessoes-mesa', {
-        mesaId,
+        mesaId: mesaParaAbrir.id,
         garcomId: user?.id,
       })
       router.push(`/mesas/${response.data.id}`)
     } catch (error: any) {
+      setMesaParaAbrir(null)
       setErrorMessage(error.response?.data?.message || 'Erro ao abrir mesa')
+    } finally {
+      setAbrindo(false)
     }
   }
 
@@ -67,7 +74,7 @@ export default function MesasPage() {
     if (mesa.status === 'OCUPADA' && mesa.sessoes && mesa.sessoes.length > 0) {
       router.push(`/mesas/${mesa.sessoes[0].id}`)
     } else if (mesa.status === 'LIVRE') {
-      handleAbrirMesa(mesa.id)
+      setMesaParaAbrir(mesa)
     }
   }
 
@@ -86,7 +93,7 @@ export default function MesasPage() {
 
   return (
     <Layout>
-      <div className="px-4 py-6 sm:px-0">
+      <div className="py-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
           <h1 className="text-2xl font-bold">Mesas</h1>
           <div className="flex gap-4 text-sm font-semibold">
@@ -138,6 +145,34 @@ export default function MesasPage() {
           })}
         </div>
       </div>
+
+      {/* Modal de confirmação — abrir mesa */}
+      {mesaParaAbrir && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full border-2 border-black shadow-xl">
+            <h2 className="text-xl font-bold text-center mb-2">Abrir Mesa {mesaParaAbrir.numero}?</h2>
+            <p className="text-gray-600 text-center text-sm mb-6">
+              Isso iniciará uma nova sessão nesta mesa.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setMesaParaAbrir(null)}
+                disabled={abrindo}
+                className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded border-2 border-black font-bold hover:bg-gray-300 transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleAbrirMesa}
+                disabled={abrindo}
+                className="flex-1 bg-green-500 text-white px-4 py-2 rounded border-2 border-black font-bold hover:bg-green-600 transition-colors disabled:opacity-50"
+              >
+                {abrindo ? 'Abrindo...' : 'Confirmar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de erro */}
       {errorMessage && (

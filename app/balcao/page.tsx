@@ -175,25 +175,25 @@ export default function BalcaoPage() {
 
   return (
     <Layout>
-      <div className="px-4 py-6 sm:px-0">
-        <h1 className="text-2xl font-bold mb-6">Pedidos Balcao</h1>
+      <div className="py-6">
+        <h1 className="text-2xl font-bold mb-6">Pedidos Balcão</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Produtos */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg border-2 border-black p-4 mb-4">
+          <div className="lg:col-span-2 order-2 lg:order-1">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
               <div className="flex gap-3">
                 <input
                   type="text"
                   placeholder="Buscar produto..."
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
-                  className="flex-1 px-3 py-2 border-2 border-black rounded-md"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
                 <select
                   value={filtroSetor}
                   onChange={(e) => setFiltroSetor(e.target.value)}
-                  className="px-3 py-2 border-2 border-black rounded-md"
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
                 >
                   <option value="">Todos</option>
                   <option value="CHAPA">Chapa</option>
@@ -208,10 +208,10 @@ export default function BalcaoPage() {
                 <button
                   key={produto.id}
                   onClick={() => handleSelecionarProduto(produto)}
-                  className="bg-white rounded-lg border-2 border-black p-4 hover:border-orange-500 hover:shadow-md transition text-left"
+                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 hover:border-orange-400 hover:shadow-md transition text-left active:scale-95"
                 >
-                  <p className="font-bold text-sm truncate">{produto.nome}</p>
-                  <p className="text-orange-600 font-bold mt-1">
+                  <p className="font-semibold text-sm text-gray-900 truncate">{produto.nome}</p>
+                  <p className="text-orange-600 font-bold mt-1 text-sm">
                     R$ {Number(produto.preco).toFixed(2)}
                   </p>
                   <span
@@ -228,42 +228,42 @@ export default function BalcaoPage() {
                 </button>
               ))}
               {produtosFiltrados.length === 0 && (
-                <p className="col-span-full text-center text-gray-500 py-8">
+                <p className="col-span-full text-center text-gray-400 text-sm py-8">
                   Nenhum produto encontrado
                 </p>
               )}
             </div>
 
             {/* Historico pedidos balcao */}
-            <div className="bg-white rounded-lg border-2 border-black p-4 mt-6">
-              <h2 className="text-lg font-bold mb-3">Pedidos do Dia</h2>
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mt-5">
+              <h2 className="text-base font-semibold text-gray-800 mb-3">Pedidos do Dia</h2>
               <div className="space-y-2 max-h-72 overflow-y-auto">
                 {pedidos.map((pedido) => (
                   <div
                     key={pedido.id}
-                    className={`p-3 border-2 rounded-lg flex justify-between items-center ${
+                    className={`p-3 rounded-lg flex justify-between items-center border text-sm ${
                       pedido.status === 'CANCELADO'
-                        ? 'border-red-300 bg-red-50'
-                        : 'border-gray-200'
+                        ? 'border-red-100 bg-red-50'
+                        : 'border-gray-100 bg-gray-50'
                     }`}
                   >
                     <div>
-                      <p className="font-medium">
+                      <p className={`font-medium text-gray-800 ${pedido.status === 'CANCELADO' ? 'line-through text-gray-400' : ''}`}>
                         {pedido.quantidade}x {pedido.produto.nome}
                         {pedido.adicionais.length > 0 && (
-                          <span className="text-sm text-gray-500 ml-1">
+                          <span className="text-xs text-gray-400 ml-1">
                             (+{pedido.adicionais.map((a) => a.adicional.nome).join(', ')})
                           </span>
                         )}
                       </p>
                       {pedido.observacao && (
-                        <p className="text-xs text-gray-500">Obs: {pedido.observacao}</p>
+                        <p className="text-xs text-gray-400">Obs: {pedido.observacao}</p>
                       )}
                       <p className="text-xs text-gray-400">
                         {new Date(pedido.criadoEm).toLocaleTimeString('pt-BR')}
                       </p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 ml-2 flex-shrink-0">
                       <p className="font-bold text-orange-600">
                         R${' '}
                         {(
@@ -276,7 +276,7 @@ export default function BalcaoPage() {
                         ).toFixed(2)}
                       </p>
                       {pedido.status === 'CANCELADO' ? (
-                        <span className="text-xs text-red-600 font-medium">CANCELADO</span>
+                        <span className="text-xs text-red-500 font-medium">CANCELADO</span>
                       ) : (
                         user?.tipo === 'ADMIN' && (
                           <button
@@ -291,15 +291,15 @@ export default function BalcaoPage() {
                   </div>
                 ))}
                 {pedidos.length === 0 && (
-                  <p className="text-gray-500 text-center py-4">Nenhum pedido de balcao hoje</p>
+                  <p className="text-gray-400 text-sm text-center py-4">Nenhum pedido hoje</p>
                 )}
               </div>
             </div>
           </div>
 
           {/* Carrinho */}
-          <div className="bg-white rounded-lg border-2 border-black p-4 h-fit sticky top-20">
-            <h2 className="text-lg font-bold mb-3">Carrinho</h2>
+          <div className="order-1 lg:order-2 bg-white rounded-xl border border-gray-200 shadow-sm p-4 h-fit lg:sticky lg:top-20">
+            <h2 className="text-base font-semibold text-gray-800 mb-3">Carrinho</h2>
 
             {carrinho.length === 0 ? (
               <p className="text-gray-500 text-center py-8">
@@ -340,9 +340,9 @@ export default function BalcaoPage() {
                   ))}
                 </div>
 
-                <div className="border-t-2 border-black pt-3 mb-3">
+                <div className="border-t border-gray-200 pt-3 mb-3">
                   <div className="flex justify-between items-center">
-                    <span className="font-bold text-lg">Total:</span>
+                    <span className="font-semibold text-gray-800">Total:</span>
                     <span className="font-bold text-lg text-orange-600">
                       R$ {totalCarrinho.toFixed(2)}
                     </span>
@@ -352,7 +352,7 @@ export default function BalcaoPage() {
                 <button
                   onClick={handleEnviarPedidos}
                   disabled={enviando}
-                  className="w-full bg-orange-500 text-white py-3 rounded-lg font-bold hover:bg-orange-600 transition disabled:opacity-50"
+                  className="w-full bg-orange-500 text-white py-2.5 rounded-lg font-semibold text-sm hover:bg-orange-600 transition disabled:opacity-50"
                 >
                   {enviando ? 'Enviando...' : 'Enviar Pedidos'}
                 </button>

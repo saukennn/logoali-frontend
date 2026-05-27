@@ -26,76 +26,136 @@ export default function LoginPage() {
       setUser(response.data.user)
       router.push('/dashboard')
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao fazer login')
+      setError(err.response?.data?.message || 'Email ou senha incorretos')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-white">
-      <div className="bg-white p-10 rounded-lg shadow-2xl w-full max-w-md border-2 border-black">
-        <h1 className="text-4xl font-bold mb-8 text-center">
-          <span className="text-black">Logo</span>
-          <span className="text-orange-500">ali</span>
-        </h1>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div>
-            <label className="block text-sm font-bold mb-2 text-black">Email</label>
-            <input
-              type="email"
-              {...register('email', { required: 'Email é obrigatório' })}
-              className="w-full px-4 py-3 border-2 border-black rounded-md focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 text-black bg-white placeholder-gray-400"
-              placeholder="seu@email.com"
-              disabled={loading}
-            />
-            {errors.email && (
-              <p className="text-red-500 text-sm mt-1 font-medium">{errors.email.message}</p>
-            )}
-          </div>
-          <div>
-            <label className="block text-sm font-bold mb-2 text-black">Senha</label>
-            <input
-              type="password"
-              {...register('senha', { required: 'Senha é obrigatória' })}
-              className="w-full px-4 py-3 border-2 border-black rounded-md focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 text-black bg-white placeholder-gray-400"
-              placeholder="••••••••"
-              disabled={loading}
-            />
-            {errors.senha && (
-              <p className="text-red-500 text-sm mt-1 font-medium">{errors.senha.message}</p>
-            )}
-          </div>
-          {error && (
-            <div className="bg-red-50 border-2 border-red-500 text-red-700 px-4 py-3 rounded font-medium">
-              {error}
-            </div>
-          )}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-md disabled:opacity-50 transition-colors shadow-lg border-2 border-black"
-          >
-            {loading ? 'Entrando...' : 'Entrar'}
-          </button>
-        </form>
-      </div>
+    <div className="flex min-h-screen">
+      {/* Painel esquerdo — identidade da marca */}
+      <div className="hidden lg:flex lg:w-1/2 bg-orange-500 flex-col items-center justify-center p-12 relative overflow-hidden">
+        {/* Círculos decorativos */}
+        <div className="absolute -top-20 -left-20 w-72 h-72 bg-orange-400 rounded-full opacity-50" />
+        <div className="absolute -bottom-16 -right-16 w-96 h-96 bg-orange-600 rounded-full opacity-40" />
 
-      {/* Overlay de Loading */}
-      {loading && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 shadow-2xl border-2 border-black">
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-lg font-bold text-black">Fazendo login...</p>
-              <p className="text-sm text-gray-600">Aguarde um momento</p>
+        <div className="relative z-10 text-center">
+          <h1 className="text-6xl font-black text-white mb-4 tracking-tight">
+            Logo<span className="text-orange-900">ali</span>
+          </h1>
+          <p className="text-orange-100 text-xl font-medium mb-10 max-w-xs leading-relaxed">
+            Sistema de gestão completo para o seu bar
+          </p>
+
+          {/* Ícones decorativos */}
+          <div className="flex gap-8 justify-center mt-8 opacity-70">
+            {/* Mesa */}
+            <div className="flex flex-col items-center gap-2 text-white">
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M3 10h18M3 10V6a1 1 0 011-1h16a1 1 0 011 1v4M3 10l2 10h14l2-10M9 21v-5m6 5v-5" />
+              </svg>
+              <span className="text-xs font-semibold uppercase tracking-wider">Mesas</span>
+            </div>
+            {/* Caixa */}
+            <div className="flex flex-col items-center gap-2 text-white">
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-xs font-semibold uppercase tracking-wider">Caixa</span>
+            </div>
+            {/* Estoque */}
+            <div className="flex flex-col items-center gap-2 text-white">
+              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+              </svg>
+              <span className="text-xs font-semibold uppercase tracking-wider">Estoque</span>
             </div>
           </div>
         </div>
-      )}
+      </div>
+
+      {/* Painel direito — formulário */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-gray-50 p-8">
+        <div className="w-full max-w-md">
+          {/* Logo para mobile */}
+          <div className="lg:hidden text-center mb-8">
+            <h1 className="text-4xl font-black text-gray-900">
+              Logo<span className="text-orange-500">ali</span>
+            </h1>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-gray-900">Bem-vindo de volta</h2>
+              <p className="text-gray-500 text-sm mt-1">Entre com suas credenciais para acessar</p>
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  {...register('email', { required: 'Email é obrigatório' })}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-shadow"
+                  placeholder="seu@email.com"
+                  disabled={loading}
+                />
+                {errors.email && (
+                  <p className="text-red-500 text-xs mt-1.5 font-medium">{errors.email.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Senha
+                </label>
+                <input
+                  type="password"
+                  {...register('senha', { required: 'Senha é obrigatória' })}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-shadow"
+                  placeholder="••••••••"
+                  disabled={loading}
+                />
+                {errors.senha && (
+                  <p className="text-red-500 text-xs mt-1.5 font-medium">{errors.senha.message}</p>
+                )}
+              </div>
+
+              {error && (
+                <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm font-medium">
+                  <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-semibold py-2.5 rounded-lg disabled:opacity-60 transition-colors flex items-center justify-center gap-2 mt-2"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Entrando...
+                  </>
+                ) : 'Entrar'}
+              </button>
+            </form>
+          </div>
+
+          <p className="text-center text-xs text-gray-400 mt-6" suppressHydrationWarning>
+            Logoali © {typeof window !== 'undefined' ? new Date().getFullYear() : ''} — Sistema de gestão para bares
+          </p>
+        </div>
+      </div>
     </div>
   )
 }
-
-
-
