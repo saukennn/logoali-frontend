@@ -144,8 +144,8 @@ export default function ComposicaoModal({ produto, onClose, onSave }: Composicao
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6 w-full max-w-3xl shadow-xl">
-          <div className="text-center">Carregando...</div>
+        <div className="bg-surface rounded-lg p-6 w-full max-w-3xl shadow-xl">
+          <div className="text-center text-text">Carregando...</div>
         </div>
       </div>
     )
@@ -153,9 +153,9 @@ export default function ComposicaoModal({ produto, onClose, onSave }: Composicao
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg p-6 w-full max-w-3xl shadow-xl max-h-[90vh] overflow-y-auto">
-        <h2 className="text-xl font-bold mb-2">Gerenciar Composição</h2>
-        <p className="text-sm text-gray-600 mb-4">
+      <div className="bg-surface rounded-lg p-6 w-full max-w-3xl shadow-xl max-h-[90vh] overflow-y-auto">
+        <h2 className="text-xl font-bold mb-2 text-text">Gerenciar Composição</h2>
+        <p className="text-sm text-text-muted mb-4">
           Produto: <strong>{produto.nome}</strong>
         </p>
 
@@ -169,7 +169,7 @@ export default function ComposicaoModal({ produto, onClose, onSave }: Composicao
           <>
             <div className="mb-4">
               <div className="flex justify-between items-center mb-3">
-                <h3 className="font-semibold">Itens da Composição ({composicao.length})</h3>
+                <h3 className="font-semibold text-text">Itens da Composição ({composicao.length})</h3>
                 <button
                   onClick={handleAddItem}
                   className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
@@ -193,14 +193,14 @@ export default function ComposicaoModal({ produto, onClose, onSave }: Composicao
                   {composicao.map((item, index) => {
                     const itemEstoqueSelecionado = itensEstoque.find(i => i.id === item.itemEstoqueId)
                     return (
-                      <div key={index} className="border rounded-lg p-3 bg-gray-50">
+                      <div key={index} className="border border-border rounded-lg p-3 bg-surface-alt">
                         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
                           <div className="md:col-span-5">
-                            <label className="block text-xs font-medium mb-1">Item de Estoque</label>
+                            <label className="block text-xs font-medium mb-1 text-text-muted">Item de Estoque</label>
                             <select
                               value={item.itemEstoqueId}
                               onChange={(e) => handleChangeItem(index, 'itemEstoqueId', e.target.value)}
-                              className="w-full px-2 py-2 border rounded-md text-sm"
+                              className="w-full px-2 py-2 border border-border rounded-md text-sm bg-surface text-text"
                             >
                               <option value="">Selecione...</option>
                               {itensEstoque.map(i => (
@@ -211,23 +211,23 @@ export default function ComposicaoModal({ produto, onClose, onSave }: Composicao
                             </select>
                           </div>
                           <div className="md:col-span-3">
-                            <label className="block text-xs font-medium mb-1">Quantidade</label>
+                            <label className="block text-xs font-medium mb-1 text-text-muted">Quantidade</label>
                             <input
                               type="number"
                               step="0.001"
                               min="0.001"
                               value={item.quantidade}
                               onChange={(e) => handleChangeItem(index, 'quantidade', e.target.value)}
-                              className="w-full px-2 py-2 border rounded-md text-sm"
+                              className="w-full px-2 py-2 border border-border rounded-md text-sm bg-surface text-text"
                             />
                           </div>
                           <div className="md:col-span-3">
-                            <label className="block text-xs font-medium mb-1">Unidade</label>
+                            <label className="block text-xs font-medium mb-1 text-text-muted">Unidade</label>
                             <input
                               type="text"
                               value={item.unidade}
                               onChange={(e) => handleChangeItem(index, 'unidade', e.target.value)}
-                              className="w-full px-2 py-2 border rounded-md text-sm"
+                              className="w-full px-2 py-2 border border-border rounded-md text-sm bg-surface text-text"
                               placeholder="ex: unidades, gramas"
                             />
                           </div>
@@ -242,7 +242,7 @@ export default function ComposicaoModal({ produto, onClose, onSave }: Composicao
                           </div>
                         </div>
                         {itemEstoqueSelecionado && (
-                          <div className="mt-2 text-xs text-gray-600">
+                          <div className="mt-2 text-xs text-text-muted">
                             <span className="font-medium">Estoque disponível:</span> {Number(itemEstoqueSelecionado.quantidadeAtual).toFixed(2)} {itemEstoqueSelecionado.unidadeMedida}
                           </div>
                         )}
@@ -264,11 +264,11 @@ export default function ComposicaoModal({ produto, onClose, onSave }: Composicao
           </>
         )}
 
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        <div className="flex justify-end gap-3 pt-4 border-t border-border">
           <button
             onClick={onClose}
             disabled={saving}
-            className="px-4 py-2 border rounded-md hover:bg-gray-100 disabled:opacity-50"
+            className="px-4 py-2 border border-border rounded-md text-text-muted hover:bg-surface-hover disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -285,15 +285,15 @@ export default function ComposicaoModal({ produto, onClose, onSave }: Composicao
       {/* Modal de Confirmação de Remoção Total */}
       {confirmRemoveAll && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
-            <h3 className="text-lg font-bold mb-2">ℹ️ Confirmar Remoção</h3>
-            <p className="text-gray-700 mb-4">
+          <div className="bg-surface rounded-lg p-6 w-full max-w-md shadow-xl">
+            <h3 className="text-lg font-bold mb-2 text-text">ℹ️ Confirmar Remoção</h3>
+            <p className="text-text-muted mb-4">
               Você está removendo toda a composição deste produto. O produto continuará vendável, mas sem controle automático de estoque. Deseja continuar?
             </p>
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setConfirmRemoveAll(false)}
-                className="px-4 py-2 border rounded-md hover:bg-gray-100"
+                className="px-4 py-2 border border-border rounded-md text-text-muted hover:bg-surface-hover"
               >
                 Cancelar
               </button>
@@ -314,14 +314,14 @@ export default function ComposicaoModal({ produto, onClose, onSave }: Composicao
       {/* Modal de Erro */}
       {errorMessage && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
+          <div className="bg-surface rounded-lg p-6 w-full max-w-md shadow-xl">
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
                 <span className="text-red-600 text-xl">✕</span>
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Erro</h3>
-                <p className="text-gray-600">{errorMessage}</p>
+                <h3 className="text-lg font-semibold text-text mb-2">Erro</h3>
+                <p className="text-text-muted">{errorMessage}</p>
               </div>
             </div>
             <div className="flex justify-end mt-6">

@@ -128,12 +128,12 @@ export default function ProdutosPage() {
 
   return (
     <Layout>
-      <div className="py-6">
+      <div className="py-6 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Produtos</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{produtos.length} produto{produtos.length !== 1 ? 's' : ''} cadastrado{produtos.length !== 1 ? 's' : ''}</p>
+            <h1 className="text-2xl font-bold text-text">Produtos</h1>
+            <p className="text-sm text-text-subtle mt-0.5">{produtos.length} produto{produtos.length !== 1 ? 's' : ''} cadastrado{produtos.length !== 1 ? 's' : ''}</p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
@@ -144,19 +144,19 @@ export default function ProdutosPage() {
         </div>
 
         {/* Filtros */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-5">
+        <div className="bg-surface rounded-xl border border-border shadow-sm p-4 mb-5">
           <div className="flex flex-col sm:flex-row gap-3">
             <input
               type="text"
               placeholder="Buscar produto..."
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="flex-1 px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
             <select
               value={filtroSetor}
               onChange={(e) => setFiltroSetor(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+              className="px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-surface"
             >
               <option value="">Todos os setores</option>
               <option value="CHAPA">Chapa</option>
@@ -168,31 +168,31 @@ export default function ProdutosPage() {
 
         {/* Lista de Produtos */}
         {produtosFiltrados.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center">
-            <p className="text-gray-400 text-sm">Nenhum produto encontrado</p>
+          <div className="bg-surface rounded-xl border border-border shadow-sm p-12 text-center">
+            <p className="text-text-subtle text-sm">Nenhum produto encontrado</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="bg-surface rounded-xl border border-border shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50">
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Produto</th>
-                    <th className="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Setor</th>
-                    <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Preço</th>
-                    <th className="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Ações</th>
+                  <tr className="border-b border-border bg-surface-alt">
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-text-subtle uppercase tracking-wide">Produto</th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-text-subtle uppercase tracking-wide">Setor</th>
+                    <th className="px-5 py-3 text-right text-xs font-semibold text-text-subtle uppercase tracking-wide">Preço</th>
+                    <th className="px-5 py-3 text-right text-xs font-semibold text-text-subtle uppercase tracking-wide">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
                   {produtosFiltrados.map((produto, i) => (
-                    <tr key={produto.id} className={`border-b border-gray-50 hover:bg-gray-50 transition-colors ${i === produtosFiltrados.length - 1 ? 'border-b-0' : ''}`}>
-                      <td className="px-5 py-3 font-medium text-gray-900">{produto.nome}</td>
+                    <tr key={produto.id} className={`border-b border-border hover:bg-surface-hover transition-colors ${i === produtosFiltrados.length - 1 ? 'border-b-0' : ''}`}>
+                      <td className="px-5 py-3 font-medium text-text">{produto.nome}</td>
                       <td className="px-5 py-3">
                         <span className={`px-2 py-0.5 rounded text-xs font-semibold ${SETOR_COLORS[produto.setor] ?? 'bg-gray-100 text-gray-700'}`}>
                           {produto.setor}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-right font-semibold text-gray-900">{fmt(Number(produto.preco))}</td>
+                      <td className="px-5 py-3 text-right font-semibold text-text">{fmt(Number(produto.preco))}</td>
                       <td className="px-5 py-3">
                         <div className="flex items-center justify-end gap-2">
                           <button
@@ -230,24 +230,24 @@ export default function ProdutosPage() {
       {/* Modal Criar Produto */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900">Novo Produto</h2>
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md">
+            <div className="px-6 py-4 border-b border-border">
+              <h2 className="text-lg font-bold text-text">Novo Produto</h2>
             </div>
             <form onSubmit={handleCreate} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Nome *</label>
+                <label className="block text-sm font-semibold text-text-muted mb-1.5">Nome *</label>
                 <input
                   type="text"
                   required
                   value={createForm.nome}
                   onChange={(e) => setCreateForm({ ...createForm, nome: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                   placeholder="Ex: Heineken 600ml"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Preço de Venda *</label>
+                <label className="block text-sm font-semibold text-text-muted mb-1.5">Preço de Venda *</label>
                 <input
                   type="number"
                   step="0.01"
@@ -255,17 +255,17 @@ export default function ProdutosPage() {
                   required
                   value={createForm.preco}
                   onChange={(e) => setCreateForm({ ...createForm, preco: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                   placeholder="0.00"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Setor *</label>
+                <label className="block text-sm font-semibold text-text-muted mb-1.5">Setor *</label>
                 <select
                   required
                   value={createForm.setor}
                   onChange={(e) => setCreateForm({ ...createForm, setor: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                  className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-surface"
                 >
                   <option value="">Selecione o setor...</option>
                   <option value="CHAPA">Chapa</option>
@@ -277,7 +277,7 @@ export default function ProdutosPage() {
                 <button
                   type="button"
                   onClick={() => { setShowCreateModal(false); setCreateForm({ nome: '', preco: '', setor: '' }) }}
-                  className="flex-1 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="flex-1 py-2 border border-border rounded-lg text-sm font-medium text-text-muted hover:bg-surface-hover transition-colors"
                 >
                   Cancelar
                 </button>
@@ -297,38 +297,38 @@ export default function ProdutosPage() {
       {/* Modal Editar Produto */}
       {produtoEditando && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-bold text-gray-900">Editar Produto</h2>
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md">
+            <div className="px-6 py-4 border-b border-border">
+              <h2 className="text-lg font-bold text-text">Editar Produto</h2>
             </div>
             <form onSubmit={handleEdit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Nome *</label>
+                <label className="block text-sm font-semibold text-text-muted mb-1.5">Nome *</label>
                 <input
                   type="text"
                   required
                   value={editForm.nome}
                   onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Preço de Venda</label>
+                <label className="block text-sm font-semibold text-text-muted mb-1.5">Preço de Venda</label>
                 <input
                   type="text"
                   value={fmt(Number(produtoEditando.preco))}
                   disabled
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-400 cursor-not-allowed"
+                  className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-surface-alt text-text-subtle cursor-not-allowed"
                 />
-                <p className="text-xs text-gray-400 mt-1">Use o módulo Financeiro para alterar o preço.</p>
+                <p className="text-xs text-text-subtle mt-1">Use o módulo Financeiro para alterar o preço.</p>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Setor *</label>
+                <label className="block text-sm font-semibold text-text-muted mb-1.5">Setor *</label>
                 <select
                   required
                   value={editForm.setor}
                   onChange={(e) => setEditForm({ ...editForm, setor: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                  className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-surface"
                 >
                   <option value="CHAPA">Chapa</option>
                   <option value="COZINHA">Cozinha</option>
@@ -339,7 +339,7 @@ export default function ProdutosPage() {
                 <button
                   type="button"
                   onClick={() => setProdutoEditando(null)}
-                  className="flex-1 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="flex-1 py-2 border border-border rounded-lg text-sm font-medium text-text-muted hover:bg-surface-hover transition-colors"
                 >
                   Cancelar
                 </button>
@@ -359,15 +359,15 @@ export default function ProdutosPage() {
       {/* Modal Excluir */}
       {showDeleteModal && produtoExcluindo && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-2">Excluir produto?</h2>
-            <p className="text-sm text-gray-500 mb-6">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-sm p-6">
+            <h2 className="text-lg font-bold text-text mb-2">Excluir produto?</h2>
+            <p className="text-sm text-text-subtle mb-6">
               Tem certeza que deseja excluir <strong>{produtoExcluindo.nome}</strong>? Esta ação não pode ser desfeita.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => { setShowDeleteModal(false); setProdutoExcluindo(null) }}
-                className="flex-1 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex-1 py-2 border border-border rounded-lg text-sm font-medium text-text-muted hover:bg-surface-hover transition-colors"
               >
                 Cancelar
               </button>
@@ -397,14 +397,14 @@ export default function ProdutosPage() {
       {/* Erro */}
       {errorMessage && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-sm p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
                 <span className="text-red-600 font-bold text-sm">✕</span>
               </div>
-              <h3 className="font-semibold text-gray-900">Erro</h3>
+              <h3 className="font-semibold text-text">Erro</h3>
             </div>
-            <p className="text-sm text-gray-600 mb-5">{errorMessage}</p>
+            <p className="text-sm text-text-muted mb-5">{errorMessage}</p>
             <button
               onClick={() => setErrorMessage(null)}
               className="w-full py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold transition-colors"
@@ -418,14 +418,14 @@ export default function ProdutosPage() {
       {/* Sucesso */}
       {successMessage && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-sm p-6">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
                 <span className="text-green-600 font-bold text-sm">✓</span>
               </div>
-              <h3 className="font-semibold text-gray-900">Sucesso</h3>
+              <h3 className="font-semibold text-text">Sucesso</h3>
             </div>
-            <p className="text-sm text-gray-600 mb-5">{successMessage}</p>
+            <p className="text-sm text-text-muted mb-5">{successMessage}</p>
             <button
               onClick={() => setSuccessMessage(null)}
               className="w-full py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-semibold transition-colors"

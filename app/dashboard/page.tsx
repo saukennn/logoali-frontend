@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTheme } from 'next-themes'
 import Layout from '@/components/Layout'
 import api from '@/lib/api'
 import { getUser } from '@/lib/auth'
@@ -42,8 +43,8 @@ function formatCurrencyShort(value: number) {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm">
-      <p className="font-semibold text-gray-700 mb-2">{label}</p>
+    <div className="bg-surface border border-border rounded-lg shadow-lg p-3 text-sm">
+      <p className="font-semibold text-text-muted mb-2">{label}</p>
       {payload.map((entry: any, i: number) => (
         <p key={i} style={{ color: entry.color }} className="font-medium">
           {entry.name}: {formatCurrency(entry.value)}
@@ -67,13 +68,13 @@ function KpiCard({ label, value, sub, color, icon, onClick }: {
   }
   return (
     <div onClick={onClick}
-      className={`bg-white rounded-xl border border-gray-200 p-4 shadow-sm
+      className={`bg-surface rounded-xl border border-border p-4 shadow-sm
         ${onClick ? 'cursor-pointer hover:shadow-md hover:border-orange-200 transition-all' : ''}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-medium text-gray-500 truncate">{label}</p>
-          <p className="text-xl font-bold text-gray-900 mt-0.5">{value}</p>
-          {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+          <p className="text-xs font-medium text-text-subtle truncate">{label}</p>
+          <p className="text-xl font-bold text-text mt-0.5">{value}</p>
+          {sub && <p className="text-xs text-text-subtle mt-0.5">{sub}</p>}
         </div>
         <div className={`p-2 rounded-lg flex-shrink-0 ${iconColors[color]}`}>{icon}</div>
       </div>
@@ -89,7 +90,7 @@ function QuickAction({ label, icon, onClick, primary }: {
       className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all border
         ${primary
           ? 'bg-orange-500 text-white border-orange-500 hover:bg-orange-600'
-          : 'bg-white text-gray-700 border-gray-200 hover:border-orange-300 hover:text-orange-600 hover:bg-orange-50'
+          : 'bg-surface text-text-muted border-border hover:border-orange-300 hover:text-orange-600 hover:bg-orange-50'
         }`}>
       {icon}
       <span className="whitespace-nowrap">{label}</span>
@@ -101,6 +102,18 @@ export default function DashboardPage() {
   const router = useRouter()
   const user = getUser()
   const isAdmin = user?.tipo === 'ADMIN'
+  // getUser() faz JSON.parse a cada chamada e retorna um objeto novo por render —
+  // usar userId (string estável) nas deps do useCallback evita recriar a função
+  // a cada render e causar loop infinito no useEffect que a consome.
+  const userId = user?.id
+
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  // Evita mismatch de hidratação: resolvedTheme só é confiável após montar no cliente.
+  useEffect(() => setMounted(true), [])
+
+  const isDark = mounted && resolvedTheme === 'dark'
 
   const [kpis, setKpis] = useState<KPIs>({
     mesasOcupadas: 0, mesasTotal: 0, caixaStatus: null,
@@ -121,28 +134,35 @@ export default function DashboardPage() {
       const n = new Date()
       const ano = n.getFullYear()
       const mes = n.getMonth() + 1
-      const [mesasRes, caixaRes, pedidosRes, relatorioRes] = await Promise.allSettled([
+      // Admin vê o faturamento geral do bar; garçom vê só o faturamento das próprias vendas.
+      const faturamentoReq = isAdmin
+        ? api.get(`/relatorios/mensal?ano=${ano}&mes=${mes}`)
+        : userId
+          ? api.get(`/users/${userId}/metricas?periodo=mes`)
+          : Promise.resolve(null)
+      const [mesasRes, caixaRes, pedidosRes, faturamentoRes] = await Promise.allSettled([
         api.get('/mesas'),
         api.get('/caixas-diarios/atual'),
         api.get('/pedidos/balcao'),
-        api.get(`/relatorios/mensal?ano=${ano}&mes=${mes}`),
+        faturamentoReq,
       ])
       const mesas = mesasRes.status === 'fulfilled' ? mesasRes.value.data : []
       const caixa = caixaRes.status === 'fulfilled' ? caixaRes.value.data : null
       const pedidos = pedidosRes.status === 'fulfilled' ? pedidosRes.value.data : []
-      const rel = relatorioRes.status === 'fulfilled' ? relatorioRes.value.data : null
+      const fat = faturamentoRes.status === 'fulfilled' ? faturamentoRes.value?.data : null
+      const faturamentoMes = isAdmin ? (fat?.resumo?.receitaTotal ?? 0) : (fat?.faturamentoTotal ?? 0)
       setKpis({
         mesasOcupadas: Array.isArray(mesas) ? mesas.filter((m: any) => m.status === 'OCUPADA').length : 0,
         mesasTotal: Array.isArray(mesas) ? mesas.length : 0,
         caixaStatus: caixa?.status ?? null,
         saldoAtual: caixa?.saldoAtual ?? caixa?.saldoInicial ?? null,
         pedidosPendentes: Array.isArray(pedidos) ? pedidos.filter((p: any) => p.status === 'PENDENTE').length : 0,
-        faturamentoMes: rel?.resumo?.receitaTotal ?? 0,
+        faturamentoMes,
       })
     } finally {
       setLoadingKpis(false)
     }
-  }, [])
+  }, [isAdmin, userId])
 
   const loadComparativo = useCallback(async () => {
     if (!isAdmin) return
@@ -231,20 +251,20 @@ export default function DashboardPage() {
 
   return (
     <Layout>
-      <div className="py-6 max-w-5xl">
+      <div className="py-6 max-w-7xl mx-auto">
 
         {/* Cabeçalho */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">
+            <h1 className="text-xl font-bold text-text">
               {user && now ? saudacao(user.nome, now.getHours()) : 'Bem-vindo'}
             </h1>
-            <p className="text-sm text-gray-400 mt-0.5">
+            <p className="text-sm text-text-subtle mt-0.5">
               {now ? now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }) : ''}
             </p>
           </div>
           <button onClick={() => { loadKpis(); loadComparativo() }}
-            className="text-gray-400 hover:text-orange-500 p-1.5 rounded-lg hover:bg-orange-50 transition-colors"
+            className="text-text-subtle hover:text-orange-500 p-1.5 rounded-lg hover:bg-orange-50 transition-colors"
             title="Atualizar">
             <svg className={`w-5 h-5 ${loadingKpis ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -259,12 +279,12 @@ export default function DashboardPage() {
             value={loadingKpis ? '—' : `${kpis.mesasOcupadas}/${kpis.mesasTotal}`}
             sub="agora" color="orange" icon={iconMesas}
             onClick={() => router.push('/mesas')} />
-          <KpiCard label="Faturamento do mês"
+          <KpiCard label={isAdmin ? 'Faturamento do mês' : 'Meu faturamento'}
             value={loadingKpis ? '—' : formatCurrency(kpis.faturamentoMes)}
             sub="mês atual" color="green" icon={iconMoney} />
           <KpiCard label="Caixa"
             value={loadingKpis ? '—' : kpis.caixaStatus === 'ABERTO' ? 'Aberto' : kpis.caixaStatus === 'FECHADO' ? 'Fechado' : '—'}
-            sub={kpis.saldoAtual != null ? `Saldo: ${formatCurrency(kpis.saldoAtual)}` : undefined}
+            sub={isAdmin && kpis.saldoAtual != null ? `Saldo: ${formatCurrency(kpis.saldoAtual)}` : undefined}
             color={kpis.caixaStatus === 'ABERTO' ? 'green' : 'gray'} icon={iconCaixa}
             onClick={isAdmin ? () => router.push('/caixa') : undefined} />
           <KpiCard label="Pedidos pendentes"
@@ -275,21 +295,21 @@ export default function DashboardPage() {
 
         {/* Gráfico comparativo — admin only */}
         {isAdmin && (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-6">
+          <div className="bg-surface rounded-xl border border-border shadow-sm p-5 mb-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-sm font-semibold text-gray-800">Comparativo de Receita</h2>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <h2 className="text-sm font-semibold text-text-muted">Comparativo de Receita</h2>
+                <p className="text-xs text-text-subtle mt-0.5">
                   {labelMesAtual} vs {labelMesAnterior}
                 </p>
               </div>
-              <div className="flex items-center gap-4 text-xs text-gray-500">
+              <div className="flex items-center gap-4 text-xs text-text-subtle">
                 <span className="flex items-center gap-1.5">
                   <span className="w-3 h-3 rounded-sm bg-orange-500 inline-block" />
                   {labelMesAtual || 'Mês atual'}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-sm bg-gray-200 inline-block" />
+                  <span className="w-3 h-3 rounded-sm bg-surface-hover inline-block" />
                   {labelMesAnterior || 'Mês anterior'}
                 </span>
               </div>
@@ -300,23 +320,23 @@ export default function DashboardPage() {
                 <div className="w-6 h-6 border-3 border-orange-500 border-t-transparent rounded-full animate-spin" />
               </div>
             ) : comparativo.length === 0 ? (
-              <div className="flex items-center justify-center h-48 text-gray-400 text-sm">
+              <div className="flex items-center justify-center h-48 text-text-subtle text-sm">
                 Sem dados para comparar
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={comparativo} barCategoryGap="30%" barGap={4}
                   margin={{ top: 4, right: 8, left: 0, bottom: 4 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                  <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#9ca3af' }}
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#404040' : '#f0f0f0'} vertical={false} />
+                  <XAxis dataKey="label" tick={{ fontSize: 11, fill: isDark ? '#71717a' : '#9ca3af' }}
                     axisLine={false} tickLine={false} />
                   <YAxis tickFormatter={formatCurrencyShort}
-                    tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} width={60} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
+                    tick={{ fontSize: 11, fill: isDark ? '#71717a' : '#9ca3af' }} axisLine={false} tickLine={false} width={60} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }} />
                   <Bar dataKey="mesAtual" name={labelMesAtual || 'Mês atual'}
                     fill="#f97316" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="mesAnterior" name={labelMesAnterior || 'Mês anterior'}
-                    fill="#e5e7eb" radius={[4, 4, 0, 0]} />
+                    fill={isDark ? '#525252' : '#e5e7eb'} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -324,8 +344,8 @@ export default function DashboardPage() {
         )}
 
         {/* Acesso Rápido */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-          <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+        <div className="bg-surface rounded-xl border border-border shadow-sm p-5">
+          <h2 className="text-xs font-semibold text-text-subtle uppercase tracking-wide mb-3">
             Acesso rápido
           </h2>
           <div className="flex flex-wrap gap-2">

@@ -43,5 +43,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Graphify (grafo de conhecimento local — gerado em knowledge-graph/, nunca aqui)
+graphify-out/
+
 
 

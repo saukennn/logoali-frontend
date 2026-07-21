@@ -3,27 +3,39 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --surface: 255 255 255;       /* bg-surface: fundo de cards/modais/sidebar */
+  --surface-alt: 249 250 251;   /* bg-surface-alt: fundo da página (era bg-gray-50) */
+  --surface-hover: 243 244 246; /* bg-surface-hover: hover sutil (era hover:bg-gray-50/100) */
+  --text: 17 17 17;             /* text-text: título/texto principal (era text-gray-900) */
+  --text-muted: 75 85 99;       /* text-text-muted: texto secundário (era text-gray-600/700) */
+  --text-subtle: 156 163 175;   /* text-text-subtle: texto terciário/placeholder (era text-gray-400) */
+  --border: 229 231 235;        /* border-border: bordas (era border-gray-200) */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --surface: 30 30 30;
+  --surface-alt: 18 18 18;
+  --surface-hover: 45 45 45;
+  --text: 245 245 245;
+  --text-muted: 163 163 163;
+  --text-subtle: 115 115 115;
+  --border: 55 55 55;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  color: rgb(var(--text));
+  background: rgb(var(--surface-alt));
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
 }
 
 

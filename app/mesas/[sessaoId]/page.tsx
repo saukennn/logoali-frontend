@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 import api from '@/lib/api'
 import { getUser } from '@/lib/auth'
+import { useToast } from '@/components/ui/Toast'
+import { statusPedido } from '@/lib/statusPedido'
 
 interface Adicional {
   id: string
@@ -32,7 +34,9 @@ interface Pedido {
   valorUnitario: number
   setor: string
   status: string
+  entregue: boolean
   observacao: string | null
+  criadoPorId: string | null
   adicionais: PedidoAdicional[]
 }
 
@@ -92,9 +96,10 @@ export default function SessaoMesaPage() {
   const [pedidoCancelando, setPedidoCancelando] = useState<string | null>(null)
   const [motivoCancelamento, setMotivoCancelamento] = useState('')
 
-  // Modais de feedback
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  // Feedback via toast (setErrorMessage/setSuccessMessage mantidos como aliases)
+  const toast = useToast()
+  const setErrorMessage = (msg: string | null) => { if (msg) toast.error(msg) }
+  const setSuccessMessage = (msg: string | null) => { if (msg) toast.success(msg) }
 
   const loadData = useCallback(async () => {
     try {
@@ -284,6 +289,16 @@ export default function SessaoMesaPage() {
     setShowCancelModal(true)
   }
 
+  const handleMarcarEntrega = async (pedidoId: string, entregue: boolean) => {
+    try {
+      await api.patch(`/pedidos/${pedidoId}/entrega`, { entregue })
+      loadData()
+      toast.success(entregue ? 'Pedido marcado como entregue' : 'Entrega desfeita')
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Erro ao atualizar entrega')
+    }
+  }
+
   const handleConfirmarCancelamento = async () => {
     if (!pedidoCancelando || !motivoCancelamento.trim()) {
       setErrorMessage('Informe o motivo do cancelamento')
@@ -321,7 +336,7 @@ export default function SessaoMesaPage() {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
-          <div className="text-lg font-medium text-gray-500">Carregando...</div>
+          <div className="text-lg font-medium text-text-subtle">Carregando...</div>
         </div>
       </Layout>
     )
@@ -341,17 +356,17 @@ export default function SessaoMesaPage() {
 
   return (
     <Layout>
-      <div className="py-6">
+      <div className="py-6 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl font-bold">Mesa {sessao.mesa.numero}</h1>
-            <p className="text-gray-600">Garcom: {sessao.garcom.nome}</p>
+            <p className="text-text-muted">Garcom: {sessao.garcom.nome}</p>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => router.push('/mesas')}
-              className="px-4 py-2 border-2 border-black rounded-lg font-medium hover:bg-gray-100 transition"
+              className="px-4 py-2 border-2 border-black rounded-lg font-medium hover:bg-surface-hover transition"
             >
               Voltar
             </button>
@@ -359,9 +374,9 @@ export default function SessaoMesaPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 order-2 lg:order-1">
             {/* Contas */}
-            <div className="bg-white rounded-lg border-2 border-black p-6 mb-6">
+            <div className="bg-surface rounded-lg border-2 border-black p-6 mb-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">Contas</h2>
                 <div className="text-sm font-semibold text-orange-600">
@@ -383,7 +398,7 @@ export default function SessaoMesaPage() {
                           ? 'border-green-300 bg-green-50 opacity-75'
                           : selectedConta === conta.id
                             ? 'border-orange-500 bg-orange-50'
-                            : 'border-gray-200 hover:border-gray-400'
+                            : 'border-border hover:border-gray-400'
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -403,8 +418,8 @@ export default function SessaoMesaPage() {
                         >
                           <div className="flex justify-between items-center">
                             <div>
-                              <span className="font-medium">{conta.apelido}</span>
-                              <span className="text-sm text-gray-500 ml-2">
+                              <span className={`font-medium ${isFechada || selectedConta === conta.id ? 'text-gray-800' : 'text-text'}`}>{conta.apelido}</span>
+                              <span className={`text-sm ml-2 ${isFechada || selectedConta === conta.id ? 'text-gray-500' : 'text-text-subtle'}`}>
                                 ({conta.pedidos.filter((p) => p.status === 'ATIVO').length} pedido(s))
                               </span>
                             </div>
@@ -450,7 +465,7 @@ export default function SessaoMesaPage() {
 
               {/* Botoes de fechamento */}
               {contasAbertas.length > 0 && (
-                <div className="flex flex-wrap gap-2 border-t-2 border-gray-200 pt-4">
+                <div className="flex flex-wrap gap-2 border-t-2 border-border pt-4">
                   {contasSelecionadas.size > 0 && (
                     <button
                       onClick={handleFecharSelecionadas}
@@ -471,7 +486,7 @@ export default function SessaoMesaPage() {
 
             {/* Pedidos da conta selecionada */}
             {contaAtual && (
-              <div className="bg-white rounded-lg border-2 border-black p-6">
+              <div className="bg-surface rounded-lg border-2 border-black p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-bold">Pedidos - {contaAtual.apelido}</h2>
                   {contaAtual.status === 'ABERTA' && (
@@ -490,13 +505,13 @@ export default function SessaoMesaPage() {
                       className={`p-3 border-2 rounded-lg ${
                         pedido.status === 'CANCELADO'
                           ? 'border-red-400 bg-red-50'
-                          : 'border-gray-200'
+                          : 'border-border'
                       }`}
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className={`font-medium ${pedido.status === 'CANCELADO' ? 'line-through text-red-600' : ''}`}>
+                            <p className={`font-medium ${pedido.status === 'CANCELADO' ? 'line-through text-red-600' : 'text-text'}`}>
                               {pedido.quantidade}x {pedido.produto.nome}
                             </p>
                             <span
@@ -510,19 +525,23 @@ export default function SessaoMesaPage() {
                             >
                               {pedido.setor}
                             </span>
-                            {pedido.status === 'CANCELADO' && (
-                              <span className="px-2 py-0.5 rounded text-xs font-bold bg-red-500 text-white">
-                                CANCELADO
-                              </span>
-                            )}
+                            {(() => {
+                              const st = statusPedido(pedido)
+                              return (
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${st.chip}`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
+                                  {st.label}
+                                </span>
+                              )
+                            })()}
                           </div>
                           {pedido.adicionais.length > 0 && (
-                            <p className="text-xs text-gray-500 mt-1">
+                            <p className={`text-xs mt-1 ${pedido.status === 'CANCELADO' ? 'text-gray-500' : 'text-text-subtle'}`}>
                               +{pedido.adicionais.map((a) => a.adicional.nome).join(', ')}
                             </p>
                           )}
                           {pedido.observacao && (
-                            <p className="text-xs text-gray-400 mt-1">
+                            <p className={`text-xs mt-1 ${pedido.status === 'CANCELADO' ? 'text-gray-500' : 'text-text-subtle'}`}>
                               Obs: {pedido.observacao}
                             </p>
                           )}
@@ -539,23 +558,38 @@ export default function SessaoMesaPage() {
                               pedido.quantidade
                             ).toFixed(2)}
                           </p>
-                          {pedido.status === 'ATIVO' && user?.tipo === 'ADMIN' && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleCancelarPedido(pedido.id)
-                              }}
-                              className="text-xs text-red-500 hover:text-red-700 font-medium mt-1"
-                            >
-                              Cancelar
-                            </button>
+                          {pedido.status === 'ATIVO' && (user?.tipo === 'ADMIN' || pedido.criadoPorId === user?.id) && (
+                            <div className="flex flex-col items-end gap-1.5 mt-1.5">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleMarcarEntrega(pedido.id, !pedido.entregue)
+                                }}
+                                className={`px-3 py-1 text-xs font-semibold rounded-md border transition-colors ${
+                                  pedido.entregue
+                                    ? 'text-text-subtle bg-surface-alt hover:bg-surface-hover border-border'
+                                    : 'text-success bg-success-light hover:bg-success/20 border-success/30'
+                                }`}
+                              >
+                                {pedido.entregue ? '↶ Desfazer' : '✓ Entregue'}
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleCancelarPedido(pedido.id)
+                                }}
+                                className="px-3 py-1 text-xs font-semibold text-danger bg-danger-light hover:bg-danger/20 border border-danger/30 rounded-md transition-colors"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>
                     </div>
                   ))}
                   {contaAtual.pedidos.length === 0 && (
-                    <p className="text-gray-500 text-center py-4">Nenhum pedido ainda</p>
+                    <p className="text-text-subtle text-center py-4">Nenhum pedido ainda</p>
                   )}
                 </div>
 
@@ -573,7 +607,7 @@ export default function SessaoMesaPage() {
           </div>
 
           {/* Sidebar Produtos */}
-          <div className="bg-white rounded-lg border-2 border-black p-6 h-fit sticky top-20">
+          <div className="bg-surface rounded-lg border-2 border-black p-6 h-fit lg:sticky lg:top-20 order-1 lg:order-2">
             <h2 className="text-xl font-bold mb-3">Produtos</h2>
 
             {/* Busca */}
@@ -594,7 +628,7 @@ export default function SessaoMesaPage() {
                   className={`px-3 py-1 rounded text-xs font-semibold transition ${
                     filtroSetor === setor
                       ? 'bg-orange-500 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : 'bg-surface-hover text-text-muted hover:bg-border'
                   }`}
                 >
                   {setor}
@@ -606,7 +640,7 @@ export default function SessaoMesaPage() {
               {produtosFiltrados.map((produto) => (
                 <div
                   key={produto.id}
-                  className="p-3 border-2 border-gray-200 rounded-lg hover:border-orange-500 cursor-pointer transition"
+                  className="p-3 border-2 border-border rounded-lg hover:border-orange-500 cursor-pointer transition"
                   onClick={() => handleSelecionarProduto(produto)}
                 >
                   <div className="flex justify-between items-center">
@@ -631,7 +665,7 @@ export default function SessaoMesaPage() {
                 </div>
               ))}
               {produtosFiltrados.length === 0 && (
-                <p className="text-gray-500 text-center py-4 text-sm">Nenhum produto encontrado</p>
+                <p className="text-text-subtle text-center py-4 text-sm">Nenhum produto encontrado</p>
               )}
             </div>
           </div>
@@ -641,7 +675,7 @@ export default function SessaoMesaPage() {
       {/* Modal Adicionar Pedido */}
       {showPedidoModal && produtoSelecionado && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg border-2 border-black p-6 w-full max-w-md mx-4">
+          <div className="bg-surface rounded-lg border-2 border-black p-6 w-full max-w-md mx-4">
             <h2 className="text-xl font-bold mb-1">{produtoSelecionado.nome}</h2>
             <p className="text-orange-600 font-bold mb-4">
               R$ {Number(produtoSelecionado.preco).toFixed(2)}
@@ -653,14 +687,14 @@ export default function SessaoMesaPage() {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setQtdTemp((q) => Math.max(1, q - 1))}
-                    className="w-10 h-10 border-2 border-black rounded-md font-bold text-lg hover:bg-gray-100"
+                    className="w-10 h-10 border-2 border-black rounded-md font-bold text-lg hover:bg-surface-hover"
                   >
                     -
                   </button>
                   <span className="text-xl font-bold w-8 text-center">{qtdTemp}</span>
                   <button
                     onClick={() => setQtdTemp((q) => q + 1)}
-                    className="w-10 h-10 border-2 border-black rounded-md font-bold text-lg hover:bg-gray-100"
+                    className="w-10 h-10 border-2 border-black rounded-md font-bold text-lg hover:bg-surface-hover"
                   >
                     +
                   </button>
@@ -674,7 +708,7 @@ export default function SessaoMesaPage() {
                     {adicionaisDisponiveis.map((adicional) => (
                       <label
                         key={adicional.id}
-                        className="flex items-center justify-between p-2 border rounded-md hover:bg-gray-50 cursor-pointer"
+                        className="flex items-center justify-between p-2 border rounded-md hover:bg-surface-hover cursor-pointer"
                       >
                         <div className="flex items-center gap-2">
                           <input
@@ -720,7 +754,7 @@ export default function SessaoMesaPage() {
                   setShowPedidoModal(false)
                   setProdutoSelecionado(null)
                 }}
-                className="flex-1 py-2 border-2 border-black rounded-md font-medium hover:bg-gray-100 transition"
+                className="flex-1 py-2 border-2 border-black rounded-md font-medium hover:bg-surface-hover transition"
               >
                 Cancelar
               </button>
@@ -738,7 +772,7 @@ export default function SessaoMesaPage() {
       {/* Modal Fechar Conta(s) */}
       {showFecharModal && contasFechando.length > 0 && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg border-2 border-black p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-surface rounded-lg border-2 border-black p-6 w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4">
               Fechar {contasFechando.length === 1
                 ? `Conta - ${contasFechando[0].apelido}`
@@ -746,11 +780,11 @@ export default function SessaoMesaPage() {
             </h2>
 
             {/* Itens agrupados por conta */}
-            <div className="bg-gray-50 rounded-lg p-4 mb-4 space-y-3">
+            <div className="bg-surface-alt rounded-lg p-4 mb-4 space-y-3">
               {contasFechando.map((conta) => (
                 <div key={conta.id}>
                   {contasFechando.length > 1 && (
-                    <p className="font-semibold text-sm text-gray-700 mb-1">{conta.apelido}</p>
+                    <p className="font-semibold text-sm text-text-muted mb-1">{conta.apelido}</p>
                   )}
                   <div className="space-y-1">
                     {conta.pedidos
@@ -774,7 +808,7 @@ export default function SessaoMesaPage() {
                       ))}
                   </div>
                   {contasFechando.length > 1 && (
-                    <div className="text-right text-sm font-semibold text-gray-600 mt-1">
+                    <div className="text-right text-sm font-semibold text-text-muted mt-1">
                       Subtotal: R$ {calcularTotalConta(conta).toFixed(2)}
                     </div>
                   )}
@@ -841,7 +875,7 @@ export default function SessaoMesaPage() {
                 )
                 if (totalPago <= 0) return null
                 return (
-                  <div className="bg-green-50 rounded-lg p-3 text-sm">
+                  <div className="bg-green-50 rounded-lg p-3 text-sm text-gray-800">
                     <div className="flex justify-between">
                       <span>Total pago:</span>
                       <span className="font-bold text-green-600">
@@ -867,7 +901,7 @@ export default function SessaoMesaPage() {
                   setShowFecharModal(false)
                   setContasFechando([])
                 }}
-                className="flex-1 py-2 border-2 border-black rounded-md font-medium hover:bg-gray-100 transition"
+                className="flex-1 py-2 border-2 border-black rounded-md font-medium hover:bg-surface-hover transition"
               >
                 Cancelar
               </button>
@@ -885,7 +919,7 @@ export default function SessaoMesaPage() {
       {/* Modal Cancelar Pedido */}
       {showCancelModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg border-2 border-black p-6 w-full max-w-md mx-4">
+          <div className="bg-surface rounded-lg border-2 border-black p-6 w-full max-w-md mx-4">
             <h2 className="text-xl font-bold mb-4">Cancelar Pedido</h2>
             <div>
               <label className="block text-sm font-medium mb-1">Motivo do cancelamento</label>
@@ -903,7 +937,7 @@ export default function SessaoMesaPage() {
                   setShowCancelModal(false)
                   setPedidoCancelando(null)
                 }}
-                className="flex-1 py-2 border-2 border-black rounded-md font-medium hover:bg-gray-100 transition"
+                className="flex-1 py-2 border-2 border-black rounded-md font-medium hover:bg-surface-hover transition"
               >
                 Voltar
               </button>
@@ -918,47 +952,6 @@ export default function SessaoMesaPage() {
         </div>
       )}
 
-      {/* Modal de Erro */}
-      {errorMessage && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-red-50 rounded-lg border-2 border-black p-6 w-full max-w-md mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                ✕
-              </div>
-              <h2 className="text-xl font-bold text-red-800">Erro</h2>
-            </div>
-            <p className="text-gray-800 mb-6">{errorMessage}</p>
-            <button
-              onClick={() => setErrorMessage(null)}
-              className="w-full py-2 bg-red-500 text-white rounded-md font-bold hover:bg-red-600 transition border-2 border-black"
-            >
-              Fechar
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Sucesso */}
-      {successMessage && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-green-50 rounded-lg border-2 border-black p-6 w-full max-w-md mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                ✓
-              </div>
-              <h2 className="text-xl font-bold text-green-800">Sucesso</h2>
-            </div>
-            <p className="text-gray-800 mb-6">{successMessage}</p>
-            <button
-              onClick={() => setSuccessMessage(null)}
-              className="w-full py-2 bg-green-500 text-white rounded-md font-bold hover:bg-green-600 transition border-2 border-black"
-            >
-              Fechar
-            </button>
-          </div>
-        </div>
-      )}
     </Layout>
   )
 }

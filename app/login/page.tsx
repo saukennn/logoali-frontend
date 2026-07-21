@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import api from '@/lib/api'
 import { setToken, setUser } from '@/lib/auth'
+import { Button } from '@/components/ui/Button'
 
 interface LoginForm {
   email: string
@@ -35,16 +36,16 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen">
       {/* Painel esquerdo — identidade da marca */}
-      <div className="hidden lg:flex lg:w-1/2 bg-orange-500 flex-col items-center justify-center p-12 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-brand-500 flex-col items-center justify-center p-12 relative overflow-hidden">
         {/* Círculos decorativos */}
-        <div className="absolute -top-20 -left-20 w-72 h-72 bg-orange-400 rounded-full opacity-50" />
-        <div className="absolute -bottom-16 -right-16 w-96 h-96 bg-orange-600 rounded-full opacity-40" />
+        <div className="absolute -top-20 -left-20 w-72 h-72 bg-brand-400 rounded-full opacity-50" />
+        <div className="absolute -bottom-16 -right-16 w-96 h-96 bg-brand-600 rounded-full opacity-40" />
 
         <div className="relative z-10 text-center">
           <h1 className="text-6xl font-black text-white mb-4 tracking-tight">
-            Logo<span className="text-orange-900">ali</span>
+            Logo<span className="text-brand-900">ali</span>
           </h1>
-          <p className="text-orange-100 text-xl font-medium mb-10 max-w-xs leading-relaxed">
+          <p className="text-brand-100 text-xl font-medium mb-10 max-w-xs leading-relaxed">
             Sistema de gestão completo para o seu bar
           </p>
 
@@ -79,30 +80,30 @@ export default function LoginPage() {
       </div>
 
       {/* Painel direito — formulário */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center bg-gray-50 p-8">
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-surface-alt p-8">
         <div className="w-full max-w-md">
           {/* Logo para mobile */}
           <div className="lg:hidden text-center mb-8">
-            <h1 className="text-4xl font-black text-gray-900">
-              Logo<span className="text-orange-500">ali</span>
+            <h1 className="text-4xl font-black text-text">
+              Logo<span className="text-brand-500">ali</span>
             </h1>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+          <div className="bg-surface rounded-2xl shadow-sm border border-border p-8">
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900">Bem-vindo de volta</h2>
-              <p className="text-gray-500 text-sm mt-1">Entre com suas credenciais para acessar</p>
+              <h2 className="text-2xl font-bold text-text">Bem-vindo de volta</h2>
+              <p className="text-text-subtle text-sm mt-1">Entre com suas credenciais para acessar</p>
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <label className="block text-sm font-semibold text-text-muted mb-1.5">
                   Email
                 </label>
                 <input
                   type="email"
                   {...register('email', { required: 'Email é obrigatório' })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-shadow"
+                  className="w-full px-4 py-2.5 border border-border rounded-lg text-text placeholder-text-subtle bg-surface focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-shadow"
                   placeholder="seu@email.com"
                   disabled={loading}
                 />
@@ -112,13 +113,13 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                <label className="block text-sm font-semibold text-text-muted mb-1.5">
                   Senha
                 </label>
                 <input
                   type="password"
                   {...register('senha', { required: 'Senha é obrigatória' })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-shadow"
+                  className="w-full px-4 py-2.5 border border-border rounded-lg text-text placeholder-text-subtle bg-surface focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-shadow"
                   placeholder="••••••••"
                   disabled={loading}
                 />
@@ -128,7 +129,7 @@ export default function LoginPage() {
               </div>
 
               {error && (
-                <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm font-medium">
+                <div className="flex items-center gap-2 bg-danger-light border border-danger/30 text-danger-dark px-4 py-3 rounded-lg text-sm font-medium">
                   <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                   </svg>
@@ -136,23 +137,19 @@ export default function LoginPage() {
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-semibold py-2.5 rounded-lg disabled:opacity-60 transition-colors flex items-center justify-center gap-2 mt-2"
-              >
+              <Button type="submit" disabled={loading} fullWidth size="md" className="mt-2">
                 {loading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     Entrando...
                   </>
                 ) : 'Entrar'}
-              </button>
+              </Button>
             </form>
           </div>
 
-          <p className="text-center text-xs text-gray-400 mt-6" suppressHydrationWarning>
-            Logoali © {typeof window !== 'undefined' ? new Date().getFullYear() : ''} — Sistema de gestão para bares
+          <p className="text-center text-xs text-text-subtle mt-6">
+            Logoali — Sistema de gestão para bares
           </p>
         </div>
       </div>

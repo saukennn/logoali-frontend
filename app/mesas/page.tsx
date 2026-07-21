@@ -85,7 +85,7 @@ export default function MesasPage() {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
-          <div className="text-lg font-medium text-gray-500">Carregando mesas...</div>
+          <div className="text-lg font-medium text-text-subtle">Carregando mesas...</div>
         </div>
       </Layout>
     )
@@ -93,7 +93,7 @@ export default function MesasPage() {
 
   return (
     <Layout>
-      <div className="py-6">
+      <div className="py-6 max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-3">
           <h1 className="text-2xl font-bold">Mesas</h1>
           <div className="flex gap-4 text-sm font-semibold">
@@ -123,7 +123,7 @@ export default function MesasPage() {
                     ? 'bg-green-500 text-white'
                     : mesa.status === 'OCUPADA'
                       ? 'bg-orange-500 text-white'
-                      : 'bg-gray-300 text-gray-600 cursor-default'
+                      : 'bg-surface-hover text-text-muted cursor-default'
                   }
                 `}
               >
@@ -149,16 +149,16 @@ export default function MesasPage() {
       {/* Modal de confirmação — abrir mesa */}
       {mesaParaAbrir && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-sm w-full border-2 border-black shadow-xl">
+          <div className="bg-surface rounded-lg p-6 max-w-sm w-full border-2 border-black shadow-xl">
             <h2 className="text-xl font-bold text-center mb-2">Abrir Mesa {mesaParaAbrir.numero}?</h2>
-            <p className="text-gray-600 text-center text-sm mb-6">
+            <p className="text-text-muted text-center text-sm mb-6">
               Isso iniciará uma nova sessão nesta mesa.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setMesaParaAbrir(null)}
                 disabled={abrindo}
-                className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded border-2 border-black font-bold hover:bg-gray-300 transition-colors disabled:opacity-50"
+                className="flex-1 bg-surface-hover text-text px-4 py-2 rounded border-2 border-black font-bold hover:bg-border transition-colors disabled:opacity-50"
               >
                 Cancelar
               </button>

@@ -5,6 +5,9 @@ import Layout from '@/components/Layout'
 import api from '@/lib/api'
 import { getUser } from '@/lib/auth'
 import { useForm } from 'react-hook-form'
+import { Button } from '@/components/ui/Button'
+import { Modal } from '@/components/ui/Modal'
+import { useToast } from '@/components/ui/Toast'
 
 interface Movimento {
   id: string
@@ -45,14 +48,21 @@ interface AbrirCaixaForm {
   observacao: string
 }
 
+const LABELS_MOVIMENTO: Record<string, string> = {
+  ENTRADA: 'Entrada',
+  SUPRIMENTO: 'Suprimento',
+  SAIDA: 'Saída',
+  SANGRIA: 'Sangria',
+  DEPOSITO: 'Depósito',
+}
+
 export default function CaixaPage() {
   const [caixa, setCaixa] = useState<CaixaDiario | null>(null)
   const [loading, setLoading] = useState(true)
   const [showAbrirModal, setShowAbrirModal] = useState(false)
   const [showFecharModal, setShowFecharModal] = useState(false)
   const [observacaoFechamento, setObservacaoFechamento] = useState('')
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const toast = useToast()
   const user = getUser()
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<MovimentoForm>()
@@ -82,8 +92,9 @@ export default function CaixaPage() {
       resetAbrir()
       setShowAbrirModal(false)
       loadCaixa()
+      toast.success('Caixa aberto com sucesso')
     } catch (error: any) {
-      setErrorMessage(error.response?.data?.message || 'Erro ao abrir caixa')
+      toast.error(error.response?.data?.message || 'Erro ao abrir caixa')
     }
   }
 
@@ -95,8 +106,9 @@ export default function CaixaPage() {
       setShowFecharModal(false)
       setObservacaoFechamento('')
       loadCaixa()
+      toast.success('Caixa fechado com sucesso')
     } catch (error: any) {
-      setErrorMessage(error.response?.data?.message || 'Erro ao fechar caixa')
+      toast.error(error.response?.data?.message || 'Erro ao fechar caixa')
     }
   }
 
@@ -108,8 +120,9 @@ export default function CaixaPage() {
       })
       reset()
       loadCaixa()
+      toast.success('Movimento registrado')
     } catch (error: any) {
-      setErrorMessage(error.response?.data?.message || 'Erro ao registrar movimento')
+      toast.error(error.response?.data?.message || 'Erro ao registrar movimento')
     }
   }
 
@@ -125,7 +138,7 @@ export default function CaixaPage() {
 
   return (
     <Layout>
-      <div className="py-6">
+      <div className="py-6 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Caixa</h1>
           <div className="flex items-center gap-2">
@@ -141,8 +154,8 @@ export default function CaixaPage() {
 
         {/* Botão abrir caixa */}
         {!caixaAberto && user?.tipo === 'ADMIN' && (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-10 text-center mb-6">
-            <p className="text-gray-500 mb-4 text-sm">Nenhum caixa aberto no momento.</p>
+          <div className="bg-surface rounded-xl border border-border shadow-sm p-10 text-center mb-6">
+            <p className="text-text-subtle mb-4 text-sm">Nenhum caixa aberto no momento.</p>
             <button
               onClick={() => setShowAbrirModal(true)}
               className="bg-orange-500 text-white px-6 py-2.5 rounded-lg font-semibold text-sm hover:bg-orange-600 transition"
@@ -156,9 +169,9 @@ export default function CaixaPage() {
         {caixaAberto && caixa && (
           <>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-              <div className="bg-gray-50 rounded-xl border border-gray-200 p-4">
-                <p className="text-xs text-gray-500 mb-1">Saldo Inicial</p>
-                <p className="text-xl font-bold text-gray-800">R$ {Number(caixa.saldoInicial).toFixed(2)}</p>
+              <div className="bg-surface-alt rounded-xl border border-border p-4">
+                <p className="text-xs text-text-subtle mb-1">Saldo Inicial</p>
+                <p className="text-xl font-bold text-text-muted">R$ {Number(caixa.saldoInicial).toFixed(2)}</p>
               </div>
               <div className="bg-green-50 rounded-xl border border-green-200 p-4">
                 <p className="text-xs text-green-600 mb-1">Total Entradas</p>
@@ -175,7 +188,7 @@ export default function CaixaPage() {
             </div>
 
             <div className="flex justify-between items-center mb-4">
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-text-subtle">
                 Aberto por <span className="font-medium">{caixa.abertoPor.nome}</span> em{' '}
                 {new Date(caixa.aberturaEm).toLocaleString('pt-BR')}
               </p>
@@ -191,40 +204,41 @@ export default function CaixaPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               {/* Novo movimento */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="text-base font-semibold text-gray-800 mb-4">Novo Movimento</h2>
+              <div className="bg-surface rounded-xl border border-border shadow-sm p-5">
+                <h2 className="text-base font-semibold text-text-muted mb-4">Novo Movimento</h2>
                 <form onSubmit={handleSubmit(onSubmitMovimento)} className="space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tipo</label>
+                    <label className="block text-sm font-semibold text-text-muted mb-1.5">Tipo</label>
                     <select
                       {...register('tipo', { required: 'Tipo é obrigatório' })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                      className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-surface"
                     >
                       <option value="">Selecione...</option>
-                      <option value="DEPOSITO">Depósito</option>
-                      <option value="SANGRIA">Sangria</option>
-                      <option value="ENTRADA">Entrada</option>
-                      <option value="SAIDA">Saída</option>
+                      <option value="ENTRADA">Entrada (dinheiro entra no caixa)</option>
+                      <option value="SUPRIMENTO">Suprimento (adicionar troco/dinheiro)</option>
+                      <option value="SAIDA">Saída (despesa/pagamento)</option>
+                      <option value="SANGRIA">Sangria (retirada pro cofre)</option>
+                      <option value="DEPOSITO">Depósito (envio pro banco)</option>
                     </select>
                     {errors.tipo && <p className="text-red-500 text-xs mt-1">{errors.tipo.message}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Valor (R$)</label>
+                    <label className="block text-sm font-semibold text-text-muted mb-1.5">Valor (R$)</label>
                     <input
                       type="number"
                       step="0.01"
                       {...register('valor', { required: 'Valor é obrigatório', min: 0.01 })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                       placeholder="0.00"
                     />
                     {errors.valor && <p className="text-red-500 text-xs mt-1">{errors.valor.message}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1.5">Descrição</label>
+                    <label className="block text-sm font-semibold text-text-muted mb-1.5">Descrição</label>
                     <input
                       type="text"
                       {...register('origem', { required: 'Origem é obrigatória' })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                       placeholder="Ex: Venda avulsa"
                     />
                     {errors.origem && <p className="text-red-500 text-xs mt-1">{errors.origem.message}</p>}
@@ -239,32 +253,33 @@ export default function CaixaPage() {
               </div>
 
               {/* Histórico */}
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <h2 className="text-base font-semibold text-gray-800 mb-4">Movimentos do Dia</h2>
+              <div className="bg-surface rounded-xl border border-border shadow-sm p-5">
+                <h2 className="text-base font-semibold text-text-muted mb-4">Movimentos do Dia</h2>
                 <div className="space-y-2 max-h-80 overflow-y-auto">
                   {caixa.movimentos.map((movimento) => (
                     <div key={movimento.id} className={`p-3 rounded-lg border text-sm flex justify-between items-center ${
-                      movimento.tipo === 'ENTRADA' || movimento.tipo === 'DEPOSITO'
+                      movimento.tipo === 'ENTRADA' || movimento.tipo === 'SUPRIMENTO'
                         ? 'bg-green-50 border-green-100'
                         : 'bg-red-50 border-red-100'
                     }`}>
                       <div>
                         <p className="font-medium text-gray-800">{movimento.origem}</p>
-                        <p className="text-xs text-gray-400 mt-0.5">
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          <span className="font-medium text-gray-500">[{LABELS_MOVIMENTO[movimento.tipo] || movimento.tipo}]</span>{' '}
                           {new Date(movimento.registradoEm).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} · {movimento.registradoPor.nome}
                         </p>
                       </div>
                       <span className={`font-bold ml-3 flex-shrink-0 ${
-                        movimento.tipo === 'ENTRADA' || movimento.tipo === 'DEPOSITO'
+                        movimento.tipo === 'ENTRADA' || movimento.tipo === 'SUPRIMENTO'
                           ? 'text-green-700'
                           : 'text-red-700'
                       }`}>
-                        {movimento.tipo === 'ENTRADA' || movimento.tipo === 'DEPOSITO' ? '+' : '-'}R$ {Number(movimento.valor).toFixed(2)}
+                        {movimento.tipo === 'ENTRADA' || movimento.tipo === 'SUPRIMENTO' ? '+' : '-'}R$ {Number(movimento.valor).toFixed(2)}
                       </span>
                     </div>
                   ))}
                   {caixa.movimentos.length === 0 && (
-                    <p className="text-gray-400 text-sm text-center py-4">Nenhum movimento registrado</p>
+                    <p className="text-text-subtle text-sm text-center py-4">Nenhum movimento registrado</p>
                   )}
                 </div>
               </div>
@@ -274,137 +289,82 @@ export default function CaixaPage() {
       </div>
 
       {/* Modal Abrir Caixa */}
-      {showAbrirModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg border-2 border-black p-6 w-full max-w-md mx-4">
-            <h2 className="text-xl font-bold mb-4">Abrir Caixa</h2>
-            <form onSubmit={handleAbrir(onAbrirCaixa)} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Saldo Inicial (R$)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  {...regAbrir('saldoInicial', { required: 'Saldo inicial é obrigatório', min: 0 })}
-                  className="w-full px-3 py-2 border-2 border-black rounded-md"
-                  placeholder="0.00"
-                />
-                {errAbrir.saldoInicial && <p className="text-red-500 text-sm mt-1">{errAbrir.saldoInicial.message}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Observação (opcional)</label>
-                <textarea
-                  {...regAbrir('observacao')}
-                  className="w-full px-3 py-2 border-2 border-black rounded-md"
-                  rows={2}
-                />
-              </div>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowAbrirModal(false)}
-                  className="flex-1 py-2 border-2 border-black rounded-md font-medium hover:bg-gray-100 transition"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-orange-500 text-white py-2 rounded-md font-bold hover:bg-orange-600 transition"
-                >
-                  Abrir Caixa
-                </button>
-              </div>
-            </form>
+      <Modal
+        open={showAbrirModal}
+        onClose={() => setShowAbrirModal(false)}
+        title="Abrir Caixa"
+        closeOnOverlay={false}
+      >
+        <form onSubmit={handleAbrir(onAbrirCaixa)} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-text-muted mb-1.5">Saldo Inicial (R$)</label>
+            <input
+              type="number"
+              step="0.01"
+              {...regAbrir('saldoInicial', { required: 'Saldo inicial é obrigatório', min: 0 })}
+              className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              placeholder="0.00"
+            />
+            {errAbrir.saldoInicial && <p className="text-danger text-xs mt-1">{errAbrir.saldoInicial.message}</p>}
           </div>
-        </div>
-      )}
+          <div>
+            <label className="block text-sm font-semibold text-text-muted mb-1.5">Observação (opcional)</label>
+            <textarea
+              {...regAbrir('observacao')}
+              className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              rows={2}
+            />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <Button type="button" variant="secondary" fullWidth onClick={() => setShowAbrirModal(false)}>Cancelar</Button>
+            <Button type="submit" fullWidth>Abrir Caixa</Button>
+          </div>
+        </form>
+      </Modal>
 
       {/* Modal Fechar Caixa */}
-      {showFecharModal && caixa && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg border-2 border-black p-6 w-full max-w-md mx-4">
-            <h2 className="text-xl font-bold mb-4">Fechar Caixa</h2>
+      <Modal
+        open={showFecharModal && !!caixa}
+        onClose={() => setShowFecharModal(false)}
+        title="Fechar Caixa"
+        closeOnOverlay={false}
+      >
+        {caixa && (
+          <>
             <div className="space-y-3 mb-4">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Saldo Inicial:</span>
+              <div className="flex justify-between text-sm">
+                <span className="text-text-muted">Saldo Inicial:</span>
                 <span className="font-medium">R$ {Number(caixa.saldoInicial).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Total Entradas:</span>
-                <span className="font-medium text-green-600">R$ {Number(caixa.resumo.totalEntradas).toFixed(2)}</span>
+              <div className="flex justify-between text-sm">
+                <span className="text-text-muted">Total Entradas:</span>
+                <span className="font-medium text-success">R$ {Number(caixa.resumo.totalEntradas).toFixed(2)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Total Saídas:</span>
-                <span className="font-medium text-red-600">R$ {Number(caixa.resumo.totalSaidas).toFixed(2)}</span>
+              <div className="flex justify-between text-sm">
+                <span className="text-text-muted">Total Saídas:</span>
+                <span className="font-medium text-danger">R$ {Number(caixa.resumo.totalSaidas).toFixed(2)}</span>
               </div>
-              <div className="border-t-2 border-black pt-2 flex justify-between">
+              <div className="border-t border-border pt-2 flex justify-between">
                 <span className="font-bold">Saldo Final:</span>
-                <span className="font-bold text-orange-600">R$ {Number(caixa.resumo.saldoAtual).toFixed(2)}</span>
+                <span className="font-bold text-brand-600">R$ {Number(caixa.resumo.saldoAtual).toFixed(2)}</span>
               </div>
             </div>
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Observação (opcional)</label>
+              <label className="block text-sm font-semibold text-text-muted mb-1.5">Observação (opcional)</label>
               <textarea
                 value={observacaoFechamento}
                 onChange={(e) => setObservacaoFechamento(e.target.value)}
-                className="w-full px-3 py-2 border-2 border-black rounded-md"
+                className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                 rows={2}
               />
             </div>
             <div className="flex gap-3">
-              <button
-                onClick={() => setShowFecharModal(false)}
-                className="flex-1 py-2 border-2 border-black rounded-md font-medium hover:bg-gray-100 transition"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={onFecharCaixa}
-                className="flex-1 bg-red-500 text-white py-2 rounded-md font-bold hover:bg-red-600 transition"
-              >
-                Confirmar Fechamento
-              </button>
+              <Button variant="secondary" fullWidth onClick={() => setShowFecharModal(false)}>Cancelar</Button>
+              <Button variant="danger" fullWidth onClick={onFecharCaixa}>Confirmar Fechamento</Button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Erro */}
-      {errorMessage && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-red-500 rounded-lg border-2 border-black p-6 w-full max-w-md mx-4">
-            <div className="flex items-center mb-4">
-              <span className="text-4xl text-white mr-3">✕</span>
-              <h2 className="text-xl font-bold text-white">Erro</h2>
-            </div>
-            <p className="text-white mb-6">{errorMessage}</p>
-            <button
-              onClick={() => setErrorMessage(null)}
-              className="w-full bg-red-700 text-white py-2 rounded-md border-2 border-black font-bold hover:bg-red-800 transition"
-            >
-              Fechar
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Sucesso */}
-      {successMessage && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-green-500 rounded-lg border-2 border-black p-6 w-full max-w-md mx-4">
-            <div className="flex items-center mb-4">
-              <span className="text-4xl text-white mr-3">✓</span>
-              <h2 className="text-xl font-bold text-white">Sucesso</h2>
-            </div>
-            <p className="text-white mb-6">{successMessage}</p>
-            <button
-              onClick={() => setSuccessMessage(null)}
-              className="w-full bg-green-700 text-white py-2 rounded-md border-2 border-black font-bold hover:bg-green-800 transition"
-            >
-              Fechar
-            </button>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </Modal>
     </Layout>
   )
 }

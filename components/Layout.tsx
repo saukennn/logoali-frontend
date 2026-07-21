@@ -3,200 +3,151 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { getUser, removeToken } from '@/lib/auth'
-import {
-  Box, Drawer, AppBar, Toolbar, List, Typography, Divider,
-  IconButton, ListItem, ListItemButton, ListItemIcon, ListItemText,
-  Avatar, Menu, MenuItem, useMediaQuery, useTheme,
-} from '@mui/material'
-import {
-  Dashboard as DashboardIcon,
-  Inventory as InventoryIcon,
-  AttachMoney as FinanceiroIcon,
-  TableRestaurant as MesasIcon,
-  PointOfSale as CaixaIcon,
-  Restaurant as ProdutosIcon,
-  Storefront as BalcaoIcon,
-  Menu as MenuIcon,
-  Logout as LogoutIcon,
-  Person as PersonIcon,
-  Assessment as RelatoriosIcon,
-  People as GarconsIcon,
-} from '@mui/icons-material'
-
-const DRAWER_WIDTH = 240
+import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
 interface LayoutProps { children: React.ReactNode }
 
+// Ícone como função que recebe className (SVG inline, sem dependência de MUI)
+type IconFn = (cls: string) => React.ReactNode
+
+const icons: Record<string, IconFn> = {
+  dashboard: (c) => <svg className={c} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>,
+  mesas: (c) => <svg className={c} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 10l1.5 9h15L21 10M3 10l1-5h16l1 5" /></svg>,
+  balcao: (c) => <svg className={c} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 7l1-3h16l1 3M3 7h18M3 7v13a1 1 0 001 1h16a1 1 0 001-1V7M9 11h6" /></svg>,
+  historico: (c) => <svg className={c} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>,
+  garcons: (c) => <svg className={c} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 100-8 4 4 0 000 8z" /></svg>,
+  estoque: (c) => <svg className={c} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>,
+  financeiro: (c) => <svg className={c} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+  relatorios: (c) => <svg className={c} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
+  caixa: (c) => <svg className={c} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>,
+  produtos: (c) => <svg className={c} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>,
+  contas: (c) => <svg className={c} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 14l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>,
+}
+
 const menuItems = [
-  { text: 'Dashboard',  icon: <DashboardIcon  sx={{ fontSize: 20 }} />, path: '/dashboard',  adminOnly: false },
-  { text: 'Mesas',      icon: <MesasIcon       sx={{ fontSize: 20 }} />, path: '/mesas',      adminOnly: false },
-  { text: 'Balcão',     icon: <BalcaoIcon      sx={{ fontSize: 20 }} />, path: '/balcao',     adminOnly: false },
-  { text: 'Garçons',    icon: <GarconsIcon     sx={{ fontSize: 20 }} />, path: '/garcons',    adminOnly: true },
-  { text: 'Estoque',    icon: <InventoryIcon   sx={{ fontSize: 20 }} />, path: '/estoque',    adminOnly: true },
-  { text: 'Financeiro', icon: <FinanceiroIcon  sx={{ fontSize: 20 }} />, path: '/financeiro', adminOnly: true },
-  { text: 'Relatórios', icon: <RelatoriosIcon  sx={{ fontSize: 20 }} />, path: '/relatorios', adminOnly: true },
-  { text: 'Caixa',      icon: <CaixaIcon       sx={{ fontSize: 20 }} />, path: '/caixa',      adminOnly: true },
-  { text: 'Produtos',   icon: <ProdutosIcon    sx={{ fontSize: 20 }} />, path: '/produtos',   adminOnly: true },
+  { text: 'Dashboard',  icon: 'dashboard',  path: '/dashboard',          adminOnly: false },
+  { text: 'Mesas',      icon: 'mesas',      path: '/mesas',              adminOnly: false },
+  { text: 'Balcão',     icon: 'balcao',     path: '/balcao',             adminOnly: false },
+  { text: 'Histórico',  icon: 'historico',  path: '/historico-pedidos',  adminOnly: true },
+  { text: 'Garçons',    icon: 'garcons',    path: '/garcons',            adminOnly: true },
+  { text: 'Estoque',    icon: 'estoque',    path: '/estoque',            adminOnly: true },
+  { text: 'Preços',     icon: 'financeiro', path: '/financeiro',         adminOnly: true },
+  { text: 'Contas a Pagar', icon: 'contas', path: '/contas-pagar',       adminOnly: true },
+  { text: 'Relatórios', icon: 'relatorios', path: '/relatorios',         adminOnly: true },
+  { text: 'Caixa',      icon: 'caixa',      path: '/caixa',              adminOnly: true },
+  { text: 'Produtos',   icon: 'produtos',   path: '/produtos',           adminOnly: true },
 ]
 
 export default function Layout({ children }: LayoutProps) {
-  const router   = useRouter()
+  const router = useRouter()
   const pathname = usePathname()
-  const theme    = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [anchorEl, setAnchorEl]     = useState<null | HTMLElement>(null)
   const user = getUser()
+  // getUser() faz JSON.parse a cada chamada (objeto novo por render) — usar só
+  // o booleano nas deps evita recriar o efeito indefinidamente.
+  const isLoggedOut = !user
 
   useEffect(() => {
-    if (!user) router.push('/login')
-  }, [user, router])
+    if (isLoggedOut) router.push('/login')
+  }, [isLoggedOut, router])
 
   if (!user) return null
 
-  const filtered = menuItems.filter(item => !item.adminOnly || user.tipo === 'ADMIN')
+  const filtered = menuItems.filter((item) => !item.adminOnly || user.tipo === 'ADMIN')
 
   const drawer = (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div className="flex flex-col h-full bg-surface">
       {/* Logo */}
-      <Box sx={{
-        px: 3, py: 3,
-        background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)',
-        display: 'flex', alignItems: 'center', minHeight: 80,
-      }}>
-        <Typography variant="h5" sx={{ fontWeight: 900, letterSpacing: '-1px', color: '#fff', fontSize: '1.6rem' }}>
-          Logo<span style={{ color: '#f97316' }}>ali</span>
-        </Typography>
-      </Box>
-
-      <Divider sx={{ borderColor: 'rgba(0,0,0,0.06)' }} />
+      <div className="px-6 py-5 bg-gradient-to-br from-ink to-ink-light flex items-center min-h-[72px]">
+        <span className="text-2xl font-black tracking-tight text-white">
+          Logo<span className="text-brand-500">ali</span>
+        </span>
+      </div>
 
       {/* Menu */}
-      <List sx={{ px: 1.5, py: 2, flexGrow: 1 }}>
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {filtered.map((item) => {
           const active = pathname === item.path
           return (
-            <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
-              <ListItemButton
-                selected={active}
-                onClick={() => { router.push(item.path); if (isMobile) setMobileOpen(false) }}
-                sx={{
-                  borderRadius: 2,
-                  py: 1,
-                  px: 1.5,
-                  '&.Mui-selected': {
-                    backgroundColor: '#fff7ed',
-                    '&:hover': { backgroundColor: '#ffedd5' },
-                  },
-                  '&:hover': { backgroundColor: '#f9fafb' },
-                }}
-              >
-                <ListItemIcon sx={{
-                  minWidth: 36,
-                  color: active ? '#f97316' : '#6b7280',
-                }}>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.text}
-                  primaryTypographyProps={{
-                    fontSize: 14,
-                    fontWeight: active ? 600 : 400,
-                    color: active ? '#f97316' : '#374151',
-                  }}
-                />
-                {active && (
-                  <Box sx={{
-                    width: 3, height: 18, borderRadius: 4,
-                    backgroundColor: '#f97316', ml: 1,
-                  }} />
-                )}
-              </ListItemButton>
-            </ListItem>
+            <button
+              key={item.text}
+              onClick={() => { router.push(item.path); setMobileOpen(false) }}
+              className={`
+                w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
+                ${active
+                  ? 'bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400'
+                  : 'text-text-muted hover:bg-surface-hover hover:text-text'}
+              `}
+            >
+              <span className={active ? 'text-brand-500' : 'text-text-subtle'}>
+                {icons[item.icon]('w-5 h-5')}
+              </span>
+              <span className="flex-1 text-left">{item.text}</span>
+              {active && <span className="w-1 h-5 rounded-full bg-brand-500" />}
+            </button>
           )
         })}
-      </List>
+      </nav>
 
       {/* Usuário no rodapé */}
-      <Divider sx={{ borderColor: 'rgba(0,0,0,0.06)' }} />
-      <Box sx={{ px: 2, py: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Avatar sx={{ width: 32, height: 32, fontSize: 13, bgcolor: '#f97316' }}>
+      <div className="border-t border-border px-4 py-3 flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
           {user.nome.charAt(0).toUpperCase()}
-        </Avatar>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography sx={{ fontSize: 13, fontWeight: 600, color: '#111827', lineHeight: 1.2,
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {user.nome}
-          </Typography>
-          <Typography sx={{ fontSize: 11, color: '#9ca3af' }}>
-            {user.tipo === 'ADMIN' ? 'Administrador' : 'Garçom'}
-          </Typography>
-        </Box>
-        <IconButton size="small" onClick={() => { removeToken(); router.push('/login') }}
-          sx={{ ml: 'auto', color: '#9ca3af', '&:hover': { color: '#ef4444' } }}
-          title="Sair">
-          <LogoutIcon sx={{ fontSize: 18 }} />
-        </IconButton>
-      </Box>
-    </Box>
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-text truncate leading-tight">{user.nome}</p>
+          <p className="text-xs text-text-subtle">{user.tipo === 'ADMIN' ? 'Administrador' : 'Garçom'}</p>
+        </div>
+        <ThemeToggle />
+        <button
+          onClick={() => { removeToken(); router.push('/login') }}
+          className="text-text-subtle hover:text-danger transition-colors p-1.5"
+          title="Sair"
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+        </button>
+      </div>
+    </div>
   )
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f9fafb' }}>
-      {/* Topbar mobile */}
-      <AppBar position="fixed" elevation={0} sx={{
-        width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
-        ml: { md: `${DRAWER_WIDTH}px` },
-        backgroundColor: '#1a1a1a',
-        borderBottom: '1px solid #333',
-        display: { md: 'none' },
-      }}>
-        <Toolbar sx={{ minHeight: '56px !important' }}>
-          <IconButton onClick={() => setMobileOpen(!mobileOpen)} sx={{ mr: 1, color: '#fff' }}>
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" sx={{ fontWeight: 900, color: '#fff', letterSpacing: '-0.5px' }}>
-            Logo<span style={{ color: '#f97316' }}>ali</span>
-          </Typography>
-        </Toolbar>
-      </AppBar>
+    <div className="min-h-screen bg-surface-alt">
+      {/* AppBar mobile */}
+      <header className="md:hidden fixed top-0 inset-x-0 z-30 bg-ink border-b border-black/20 h-14 flex items-center px-4">
+        <button onClick={() => setMobileOpen(true)} className="text-white p-1.5 -ml-1.5" aria-label="Abrir menu">
+          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <span className="ml-2 text-lg font-black text-white tracking-tight flex-1">
+          Logo<span className="text-brand-500">ali</span>
+        </span>
+        <ThemeToggle className="text-white hover:bg-white/10 hover:text-white" />
+      </header>
 
-      {/* Drawer mobile */}
-      <Box component="nav" sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}>
-        <Drawer
-          variant="temporary" open={mobileOpen} onClose={() => setMobileOpen(false)}
-          ModalProps={{ keepMounted: true }}
-          sx={{
-            display: { xs: 'block', md: 'none' },
-            '& .MuiDrawer-paper': { width: DRAWER_WIDTH, borderRight: '1px solid #e5e7eb', boxShadow: 'none' },
-          }}
-        >
-          {drawer}
-        </Drawer>
+      {/* Sidebar desktop (fixa) */}
+      <aside className="hidden md:flex md:fixed md:inset-y-0 md:left-0 md:w-60 border-r border-border z-20">
+        {drawer}
+      </aside>
 
-        {/* Drawer desktop — permanente */}
-        <Drawer variant="permanent" open
-          sx={{
-            display: { xs: 'none', md: 'block' },
-            '& .MuiDrawer-paper': { width: DRAWER_WIDTH, borderRight: '1px solid #e5e7eb', boxShadow: 'none' },
-          }}
-        >
-          {drawer}
-        </Drawer>
-      </Box>
+      {/* Drawer mobile (overlay) */}
+      {mobileOpen && (
+        <div className="md:hidden fixed inset-0 z-40">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
+          <div className="absolute inset-y-0 left-0 w-60 shadow-xl">
+            {drawer}
+          </div>
+        </div>
+      )}
 
       {/* Conteúdo principal */}
-      <Box component="main" sx={{
-        flexGrow: 1,
-        width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
-        mt: { xs: '56px', md: 0 },
-        minHeight: '100vh',
-        backgroundColor: '#f9fafb',
-        overflowX: 'hidden',
-        p: { xs: 2, sm: 3 },
-      }}>
-        {children}
-      </Box>
-    </Box>
+      <main className="md:ml-60 pt-14 md:pt-0 min-h-screen">
+        <div className="p-4 sm:p-6">
+          {children}
+        </div>
+      </main>
+    </div>
   )
 }
