@@ -104,25 +104,25 @@ export default function HistoricoPedidosPage() {
 
         {/* Resumo */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
-          <div className="bg-surface-alt border border-border rounded-xl p-3">
+          <div className="bg-surface border border-border rounded-xl p-3">
             <p className="text-xs font-semibold uppercase text-text-subtle mb-1">Total</p>
             <p className="text-xl font-bold text-text">{pedidos.length}</p>
           </div>
-          <div className="bg-warning-light border border-warning/30 rounded-xl p-3">
+          <div className="bg-surface border-2 border-warning/40 rounded-xl p-3">
             <p className="text-xs font-semibold uppercase text-warning-dark mb-1">Pendentes</p>
             <p className="text-xl font-bold text-warning-dark">{totalAtivos.length - totalEntregues.length}</p>
           </div>
-          <div className="bg-success-light border border-success/30 rounded-xl p-3">
+          <div className="bg-surface border-2 border-success/40 rounded-xl p-3">
             <p className="text-xs font-semibold uppercase text-success-dark mb-1">Entregues</p>
             <p className="text-xl font-bold text-success-dark">{totalEntregues.length}</p>
           </div>
-          <div className="bg-danger-light border border-danger/30 rounded-xl p-3">
+          <div className="bg-surface border-2 border-danger/40 rounded-xl p-3">
             <p className="text-xs font-semibold uppercase text-danger-dark mb-1">Cancelados</p>
             <p className="text-xl font-bold text-danger-dark">{totalCancelados.length}</p>
           </div>
-          <div className="bg-brand-50 border border-brand-200 rounded-xl p-3">
+          <div className="bg-surface border-2 border-brand-300 rounded-xl p-3">
             <p className="text-xs font-semibold uppercase text-brand-700 mb-1">Faturamento</p>
-            <p className="text-xl font-bold text-brand-800">{fmt(faturamento)}</p>
+            <p className="text-xl font-bold text-brand-700">{fmt(faturamento)}</p>
           </div>
         </div>
 
@@ -171,14 +171,14 @@ export default function HistoricoPedidosPage() {
             {filtrados.map((p) => (
               <div
                 key={p.id}
-                className={`border rounded-xl p-4 shadow-sm ${
-                  p.status === 'CANCELADO' ? 'border-red-200 bg-red-50' : 'border-border bg-surface'
+                className={`border-2 rounded-xl p-4 shadow-sm bg-surface ${
+                  p.status === 'CANCELADO' ? 'border-red-300 dark:border-red-700' : 'border-border'
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className={`font-semibold ${p.status === 'CANCELADO' ? 'text-gray-800 line-through text-gray-500' : 'text-text'}`}>
+                      <span className={`font-semibold ${p.status === 'CANCELADO' ? 'text-text-muted line-through' : 'text-text'}`}>
                         {p.quantidade}x {p.produto.nome}
                       </span>
                       <span className={`px-2 py-0.5 text-xs font-semibold rounded ${SETOR_COLORS[p.setor] ?? 'bg-gray-100 text-gray-700'}`}>
@@ -199,26 +199,26 @@ export default function HistoricoPedidosPage() {
                     </div>
 
                     {p.adicionais.length > 0 && (
-                      <p className={`text-xs ${p.status === 'CANCELADO' ? 'text-gray-500' : 'text-text-subtle'}`}>+ {p.adicionais.map((a) => a.adicional.nome).join(', ')}</p>
+                      <p className="text-xs text-text-subtle">+ {p.adicionais.map((a) => a.adicional.nome).join(', ')}</p>
                     )}
                     {p.contaClienteMesa && (
-                      <p className={`text-xs ${p.status === 'CANCELADO' ? 'text-gray-500' : 'text-text-subtle'}`}>Conta: {p.contaClienteMesa.apelido}</p>
+                      <p className="text-xs text-text-subtle">Conta: {p.contaClienteMesa.apelido}</p>
                     )}
                     {p.nomeCliente && (
-                      <p className="text-xs text-blue-600">👤 {p.nomeCliente}</p>
+                      <p className="text-xs text-blue-600 dark:text-blue-400">👤 {p.nomeCliente}</p>
                     )}
                     {p.observacao && (
-                      <p className={`text-xs ${p.status === 'CANCELADO' ? 'text-gray-500' : 'text-text-subtle'}`}>Obs: {p.observacao}</p>
+                      <p className="text-xs text-text-subtle">Obs: {p.observacao}</p>
                     )}
 
-                    <div className={`flex items-center gap-3 mt-1.5 text-xs flex-wrap ${p.status === 'CANCELADO' ? 'text-gray-500' : 'text-text-subtle'}`}>
+                    <div className="flex items-center gap-3 mt-1.5 text-xs flex-wrap text-text-subtle">
                       <span>{new Date(p.criadoEm).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
                       <span>•</span>
-                      <span>Por: <strong className={p.status === 'CANCELADO' ? 'text-gray-600' : 'text-text-muted'}>{p.criadoPor?.nome || (p.contaClienteMesa?.sessaoMesa.garcom.nome ?? '—')}</strong></span>
+                      <span>Por: <strong className="text-text-muted">{p.criadoPor?.nome || (p.contaClienteMesa?.sessaoMesa.garcom.nome ?? '—')}</strong></span>
                     </div>
 
                     {p.status === 'CANCELADO' && p.motivoCancelamento && (
-                      <div className="mt-2 text-xs text-red-600 bg-red-100 rounded px-2 py-1 inline-block">
+                      <div className="mt-2 text-xs text-red-700 dark:text-red-400 bg-surface-alt border border-red-300 dark:border-red-700 rounded px-2 py-1 inline-block">
                         Cancelado por {p.canceladoPor?.nome || '—'}: {p.motivoCancelamento}
                       </div>
                     )}

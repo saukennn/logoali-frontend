@@ -43,12 +43,14 @@ interface RelatorioMensal {
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v)
 
-function KpiCard({ label, value, sub, color }: { label: string; value: string; sub?: string; color: string }) {
+// accent = cor de destaque (borda + texto). Fundo fica neutro (bg-surface, respeita
+// o tema) — só a borda e o texto carregam a cor, em vez de pintar o cartão inteiro.
+function KpiCard({ label, value, sub, accent }: { label: string; value: string; sub?: string; accent: string }) {
   return (
-    <div className={`rounded-xl p-4 border ${color}`}>
-      <p className="text-xs font-semibold uppercase tracking-wide opacity-70 mb-1">{label}</p>
+    <div className={`rounded-xl p-4 border-2 bg-surface ${accent}`}>
+      <p className="text-xs font-semibold uppercase tracking-wide text-text-subtle mb-1">{label}</p>
       <p className="text-2xl font-bold">{value}</p>
-      {sub && <p className="text-xs mt-1 opacity-60">{sub}</p>}
+      {sub && <p className="text-xs mt-1 text-text-subtle">{sub}</p>}
     </div>
   )
 }
@@ -152,50 +154,52 @@ export default function RelatoriosPage() {
             <div className="space-y-4">
               {/* Vendas */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <div className="bg-green-50 border border-green-200 rounded-xl p-3">
-                  <p className="text-xs font-semibold uppercase text-green-700 opacity-80 mb-1">Receita Total</p>
-                  <p className="text-xl font-bold text-green-800">{fmt(relatorioDiario.vendas.receitaTotal)}</p>
+                <div className="bg-surface border-2 border-green-300 dark:border-green-700 rounded-xl p-3">
+                  <p className="text-xs font-semibold uppercase text-green-700 dark:text-green-400 mb-1">Receita Total (vendido)</p>
+                  <p className="text-xl font-bold text-green-700 dark:text-green-400">{fmt(relatorioDiario.vendas.receitaTotal)}</p>
+                  <p className="text-[11px] text-text-subtle mt-0.5">Pedidos feitos, mesmo se a conta ainda não foi paga</p>
                 </div>
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
-                  <p className="text-xs font-semibold uppercase text-blue-700 opacity-80 mb-1">Balcão</p>
-                  <p className="text-xl font-bold text-blue-800">{fmt(relatorioDiario.vendas.receitaBalcao)}</p>
+                <div className="bg-surface border-2 border-blue-300 dark:border-blue-700 rounded-xl p-3">
+                  <p className="text-xs font-semibold uppercase text-blue-700 dark:text-blue-400 mb-1">Balcão</p>
+                  <p className="text-xl font-bold text-blue-700 dark:text-blue-400">{fmt(relatorioDiario.vendas.receitaBalcao)}</p>
                 </div>
-                <div className="bg-purple-50 border border-purple-200 rounded-xl p-3">
-                  <p className="text-xs font-semibold uppercase text-purple-700 opacity-80 mb-1">Mesas</p>
-                  <p className="text-xl font-bold text-purple-800">{fmt(relatorioDiario.vendas.receitaMesas)}</p>
+                <div className="bg-surface border-2 border-purple-300 dark:border-purple-700 rounded-xl p-3">
+                  <p className="text-xs font-semibold uppercase text-purple-700 dark:text-purple-400 mb-1">Mesas</p>
+                  <p className="text-xl font-bold text-purple-700 dark:text-purple-400">{fmt(relatorioDiario.vendas.receitaMesas)}</p>
                 </div>
-                <div className="bg-surface-alt border border-border rounded-xl p-3">
-                  <p className="text-xs font-semibold uppercase text-text-muted opacity-80 mb-1">Pedidos</p>
+                <div className="bg-surface border border-border rounded-xl p-3">
+                  <p className="text-xs font-semibold uppercase text-text-muted mb-1">Pedidos</p>
                   <p className="text-xl font-bold text-text">{relatorioDiario.vendas.numeroPedidos}</p>
-                  <p className="text-xs text-red-500 mt-0.5">{relatorioDiario.vendas.pedidosCancelados} cancelados</p>
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">{relatorioDiario.vendas.pedidosCancelados} cancelados</p>
                 </div>
               </div>
 
               {/* Operação do Dia */}
-              <div className={`rounded-xl border-2 p-4 ${relatorioDiario.operacao.resultado >= 0 ? 'bg-green-50 border-green-300' : 'bg-red-50 border-red-300'}`}>
-                <p className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-3">Resultado da Operação do Dia</p>
+              <div className={`rounded-xl border-2 p-4 bg-surface ${relatorioDiario.operacao.resultado >= 0 ? 'border-green-300 dark:border-green-700' : 'border-red-300 dark:border-red-700'}`}>
+                <p className="text-xs font-bold uppercase tracking-wide text-text-subtle mb-3">Resultado da Operação do Dia</p>
+                <p className="text-[11px] text-text-subtle -mt-2 mb-2">Baseado em dinheiro efetivamente recebido, não no total vendido acima — contas ainda em aberto não entram aqui.</p>
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">(+) Vendas (mesas + balcão)</span>
-                    <span className="font-semibold text-green-700">{fmt(relatorioDiario.operacao.totalRecebido)}</span>
+                    <span className="text-text-muted">(+) Vendas recebidas (mesas + balcão)</span>
+                    <span className="font-semibold text-green-700 dark:text-green-400">{fmt(relatorioDiario.operacao.totalRecebido)}</span>
                   </div>
                   {relatorioDiario.caixa.entradas > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">(+) Outras entradas (não-venda)</span>
-                      <span className="font-semibold text-green-700">{fmt(relatorioDiario.caixa.entradas)}</span>
+                      <span className="text-text-muted">(+) Outras entradas (não-venda)</span>
+                      <span className="font-semibold text-green-700 dark:text-green-400">{fmt(relatorioDiario.caixa.entradas)}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">(-) Despesas</span>
-                    <span className="font-semibold text-red-600">{fmt(relatorioDiario.caixa.despesas)}</span>
+                    <span className="text-text-muted">(-) Despesas</span>
+                    <span className="font-semibold text-red-600 dark:text-red-400">{fmt(relatorioDiario.caixa.despesas)}</span>
                   </div>
-                  <div className={`border-t-2 pt-2 mt-2 flex justify-between items-center ${relatorioDiario.operacao.resultado >= 0 ? 'border-green-300' : 'border-red-300'}`}>
-                    <span className="font-bold text-gray-800">= Lucro do dia</span>
-                    <span className={`text-xl font-black ${relatorioDiario.operacao.resultado >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                  <div className={`border-t-2 pt-2 mt-2 flex justify-between items-center ${relatorioDiario.operacao.resultado >= 0 ? 'border-green-300 dark:border-green-700' : 'border-red-300 dark:border-red-700'}`}>
+                    <span className="font-bold text-text">= Lucro do dia</span>
+                    <span className={`text-xl font-black ${relatorioDiario.operacao.resultado >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
                       {fmt(relatorioDiario.operacao.resultado)}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Sangrias e depósitos não entram no lucro (o dinheiro continua da empresa).</p>
+                  <p className="text-xs text-text-subtle mt-1">Sangrias e depósitos não entram no lucro (o dinheiro continua da empresa).</p>
                 </div>
               </div>
 
@@ -205,9 +209,9 @@ export default function RelatoriosPage() {
                   <p className="text-xs font-semibold text-text-subtle uppercase mb-3">Formas de Pagamento</p>
                   <div className="space-y-2">
                     {[
-                      { label: 'Dinheiro', value: relatorioDiario.pagamentos.dinheiro, color: 'text-green-700' },
-                      { label: 'PIX', value: relatorioDiario.pagamentos.pix, color: 'text-blue-700' },
-                      { label: 'Cartão', value: relatorioDiario.pagamentos.cartao, color: 'text-purple-700' },
+                      { label: 'Dinheiro', value: relatorioDiario.pagamentos.dinheiro, color: 'text-green-700 dark:text-green-400' },
+                      { label: 'PIX', value: relatorioDiario.pagamentos.pix, color: 'text-blue-700 dark:text-blue-400' },
+                      { label: 'Cartão', value: relatorioDiario.pagamentos.cartao, color: 'text-purple-700 dark:text-purple-400' },
                     ].map((item) => (
                       <div key={item.label} className="flex justify-between items-center">
                         <span className="text-sm text-text-muted">{item.label}</span>
@@ -225,11 +229,11 @@ export default function RelatoriosPage() {
                   <p className="text-xs font-semibold text-text-subtle uppercase mb-3">Movimentos de Caixa</p>
                   <div className="space-y-2">
                     {[
-                      { label: 'Outras entradas', value: relatorioDiario.caixa.entradas, color: 'text-green-700' },
+                      { label: 'Outras entradas', value: relatorioDiario.caixa.entradas, color: 'text-green-700 dark:text-green-400' },
                       { label: 'Suprimentos (troco)', value: relatorioDiario.caixa.suprimentos, color: 'text-text-muted' },
-                      { label: 'Despesas', value: relatorioDiario.caixa.despesas, color: 'text-red-600' },
-                      { label: 'Sangrias', value: relatorioDiario.caixa.sangrias, color: 'text-orange-600' },
-                      { label: 'Depósitos bancários', value: relatorioDiario.caixa.depositos, color: 'text-blue-600' },
+                      { label: 'Despesas', value: relatorioDiario.caixa.despesas, color: 'text-red-600 dark:text-red-400' },
+                      { label: 'Sangrias', value: relatorioDiario.caixa.sangrias, color: 'text-orange-600 dark:text-orange-400' },
+                      { label: 'Depósitos bancários', value: relatorioDiario.caixa.depositos, color: 'text-blue-600 dark:text-blue-400' },
                     ].map((item) => (
                       <div key={item.label} className="flex justify-between items-center">
                         <span className="text-sm text-text-muted">{item.label}</span>
@@ -253,7 +257,7 @@ export default function RelatoriosPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-red-700 text-sm">{error}</div>
+          <div className="bg-surface border-2 border-red-300 dark:border-red-700 rounded-lg p-4 mb-6 text-red-700 dark:text-red-400 text-sm">{error}</div>
         )}
 
         {loading && (
@@ -267,22 +271,23 @@ export default function RelatoriosPage() {
 
             {/* KPIs */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <KpiCard label="Receita Total" value={fmt(relatorio.resumo.receitaTotal)}
-                color="bg-green-50 border-green-200 text-green-800" />
+              <KpiCard label="Receita Total (vendido)" value={fmt(relatorio.resumo.receitaTotal)}
+                sub="Pedidos feitos no mês"
+                accent="border-green-300 dark:border-green-700 text-green-700 dark:text-green-400" />
               <KpiCard label="Custo Total" value={fmt(relatorio.resumo.custoTotal)}
-                color="bg-red-50 border-red-200 text-red-800" />
+                accent="border-red-300 dark:border-red-700 text-red-700 dark:text-red-400" />
               <KpiCard label="Lucro" value={fmt(relatorio.resumo.lucro)}
                 sub={`Margem: ${relatorio.resumo.margemLucro.toFixed(1)}%`}
-                color="bg-blue-50 border-blue-200 text-blue-800" />
+                accent="border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-400" />
               <KpiCard label="Ticket Médio" value={fmt(relatorio.resumo.ticketMedio)}
-                color="bg-purple-50 border-purple-200 text-purple-800" />
+                accent="border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-400" />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <KpiCard label="Pedidos Realizados" value={String(relatorio.resumo.pedidosTotal)}
-                color="bg-surface-alt border-border text-text" />
+                accent="border-border text-text" />
               <KpiCard label="Pedidos Cancelados" value={String(relatorio.resumo.pedidosCancelados)}
-                color="bg-orange-50 border-orange-200 text-orange-800" />
+                accent="border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-400" />
             </div>
 
             {/* Receita por Forma de Pagamento */}
@@ -351,9 +356,9 @@ export default function RelatoriosPage() {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                 {[
                   { label: 'Saldo Inicial', value: relatorio.movimentacaoCaixa.saldoInicial, color: 'text-text' },
-                  { label: 'Entradas', value: relatorio.movimentacaoCaixa.entradas, color: 'text-green-700' },
-                  { label: 'Saídas', value: relatorio.movimentacaoCaixa.saidas, color: 'text-red-700' },
-                  { label: 'Saldo Final', value: relatorio.movimentacaoCaixa.saldoFinal, color: 'text-blue-700' },
+                  { label: 'Entradas', value: relatorio.movimentacaoCaixa.entradas, color: 'text-green-700 dark:text-green-400' },
+                  { label: 'Saídas', value: relatorio.movimentacaoCaixa.saidas, color: 'text-red-700 dark:text-red-400' },
+                  { label: 'Saldo Final', value: relatorio.movimentacaoCaixa.saldoFinal, color: 'text-blue-700 dark:text-blue-400' },
                 ].map((item) => (
                   <div key={item.label} className="bg-surface-alt rounded-lg p-3 border border-border">
                     <p className="text-xs text-text-subtle mb-1">{item.label}</p>
@@ -365,15 +370,15 @@ export default function RelatoriosPage() {
               {relatorio.movimentacaoCaixa.movimentacoes.length > 0 && (
                 <div className="max-h-64 overflow-y-auto space-y-2 mt-2">
                   {relatorio.movimentacaoCaixa.movimentacoes.map((mov, i) => (
-                    <div key={i} className={`flex items-center justify-between p-3 rounded-lg text-sm border
-                      ${mov.tipo === 'ENTRADA' ? 'bg-green-50 border-green-100' : 'bg-red-50 border-red-100'}`}>
+                    <div key={i} className={`flex items-center justify-between p-3 rounded-lg text-sm border bg-surface
+                      ${mov.tipo === 'ENTRADA' ? 'border-green-300 dark:border-green-700' : 'border-red-300 dark:border-red-700'}`}>
                       <div>
-                        <p className="font-medium text-gray-800">{mov.descricao}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="font-medium text-text">{mov.descricao}</p>
+                        <p className="text-xs text-text-subtle mt-0.5">
                           {new Date(mov.data).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
-                      <span className={`font-bold ${mov.tipo === 'ENTRADA' ? 'text-green-700' : 'text-red-700'}`}>
+                      <span className={`font-bold ${mov.tipo === 'ENTRADA' ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
                         {mov.tipo === 'ENTRADA' ? '+' : '-'}{fmt(mov.valor)}
                       </span>
                     </div>

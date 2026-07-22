@@ -142,10 +142,10 @@ export default function CaixaPage() {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Caixa</h1>
           <div className="flex items-center gap-2">
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+            <span className={`px-3 py-1 rounded-full text-sm font-medium bg-surface border-2 ${
               caixaAberto
-                ? 'bg-green-100 text-green-800 border border-green-300'
-                : 'bg-red-100 text-red-800 border border-red-300'
+                ? 'text-green-700 dark:text-green-400 border-green-300 dark:border-green-700'
+                : 'text-red-700 dark:text-red-400 border-red-300 dark:border-red-700'
             }`}>
               {caixaAberto ? 'ABERTO' : 'FECHADO'}
             </span>
@@ -169,21 +169,21 @@ export default function CaixaPage() {
         {caixaAberto && caixa && (
           <>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-              <div className="bg-surface-alt rounded-xl border border-border p-4">
+              <div className="bg-surface rounded-xl border border-border p-4">
                 <p className="text-xs text-text-subtle mb-1">Saldo Inicial</p>
                 <p className="text-xl font-bold text-text-muted">R$ {Number(caixa.saldoInicial).toFixed(2)}</p>
               </div>
-              <div className="bg-green-50 rounded-xl border border-green-200 p-4">
-                <p className="text-xs text-green-600 mb-1">Total Entradas</p>
-                <p className="text-xl font-bold text-green-700">R$ {Number(caixa.resumo.totalEntradas).toFixed(2)}</p>
+              <div className="bg-surface rounded-xl border-2 border-green-300 dark:border-green-700 p-4">
+                <p className="text-xs text-green-700 dark:text-green-400 mb-1">Total Entradas</p>
+                <p className="text-xl font-bold text-green-700 dark:text-green-400">R$ {Number(caixa.resumo.totalEntradas).toFixed(2)}</p>
               </div>
-              <div className="bg-red-50 rounded-xl border border-red-200 p-4">
-                <p className="text-xs text-red-600 mb-1">Total Saídas</p>
-                <p className="text-xl font-bold text-red-700">R$ {Number(caixa.resumo.totalSaidas).toFixed(2)}</p>
+              <div className="bg-surface rounded-xl border-2 border-red-300 dark:border-red-700 p-4">
+                <p className="text-xs text-red-700 dark:text-red-400 mb-1">Total Saídas</p>
+                <p className="text-xl font-bold text-red-700 dark:text-red-400">R$ {Number(caixa.resumo.totalSaidas).toFixed(2)}</p>
               </div>
-              <div className="bg-orange-50 rounded-xl border border-orange-200 p-4">
-                <p className="text-xs text-orange-600 mb-1">Saldo Atual</p>
-                <p className="text-xl font-bold text-orange-700">R$ {Number(caixa.resumo.saldoAtual).toFixed(2)}</p>
+              <div className="bg-surface rounded-xl border-2 border-orange-300 dark:border-orange-700 p-4">
+                <p className="text-xs text-orange-700 dark:text-orange-400 mb-1">Saldo Atual</p>
+                <p className="text-xl font-bold text-orange-700 dark:text-orange-400">R$ {Number(caixa.resumo.saldoAtual).toFixed(2)}</p>
               </div>
             </div>
 
@@ -257,22 +257,22 @@ export default function CaixaPage() {
                 <h2 className="text-base font-semibold text-text-muted mb-4">Movimentos do Dia</h2>
                 <div className="space-y-2 max-h-80 overflow-y-auto">
                   {caixa.movimentos.map((movimento) => (
-                    <div key={movimento.id} className={`p-3 rounded-lg border text-sm flex justify-between items-center ${
+                    <div key={movimento.id} className={`p-3 rounded-lg border-2 text-sm flex justify-between items-center bg-surface ${
                       movimento.tipo === 'ENTRADA' || movimento.tipo === 'SUPRIMENTO'
-                        ? 'bg-green-50 border-green-100'
-                        : 'bg-red-50 border-red-100'
+                        ? 'border-green-300 dark:border-green-700'
+                        : 'border-red-300 dark:border-red-700'
                     }`}>
                       <div>
-                        <p className="font-medium text-gray-800">{movimento.origem}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          <span className="font-medium text-gray-500">[{LABELS_MOVIMENTO[movimento.tipo] || movimento.tipo}]</span>{' '}
+                        <p className="font-medium text-text">{movimento.origem}</p>
+                        <p className="text-xs text-text-subtle mt-0.5">
+                          <span className="font-medium text-text-subtle">[{LABELS_MOVIMENTO[movimento.tipo] || movimento.tipo}]</span>{' '}
                           {new Date(movimento.registradoEm).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} · {movimento.registradoPor.nome}
                         </p>
                       </div>
                       <span className={`font-bold ml-3 flex-shrink-0 ${
                         movimento.tipo === 'ENTRADA' || movimento.tipo === 'SUPRIMENTO'
-                          ? 'text-green-700'
-                          : 'text-red-700'
+                          ? 'text-green-700 dark:text-green-400'
+                          : 'text-red-700 dark:text-red-400'
                       }`}>
                         {movimento.tipo === 'ENTRADA' || movimento.tipo === 'SUPRIMENTO' ? '+' : '-'}R$ {Number(movimento.valor).toFixed(2)}
                       </span>

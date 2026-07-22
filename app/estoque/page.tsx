@@ -27,6 +27,16 @@ const QTD_POR_EMBALAGEM: Record<string, number> = {
   FARDO: 12,
 }
 
+// Itens medidos em GRAMA/KILO não usam caixa/fardo — exibem em Kg automaticamente
+// quando o valor for grande o suficiente, sem depender de unidadeExibicao.
+const formatarQtdPeso = (qtdGramas: number): string => {
+  const qtd = Number(qtdGramas)
+  if (qtd >= 1000) {
+    return `${(qtd / 1000).toFixed(qtd % 1000 === 0 ? 0 : 2)} kg`
+  }
+  return `${Number.isInteger(qtd) ? qtd : qtd.toFixed(3)} g`
+}
+
 const formatarQtdExibicao = (qtdUnidades: number, unidadeExibicao: string): string => {
   const qtd = Number(qtdUnidades)
   const unid = unidadeExibicao || 'UNIDADE'
@@ -47,10 +57,14 @@ const formatarQtdExibicao = (qtdUnidades: number, unidadeExibicao: string): stri
 }
 
 const formatarQuantidade = (item: ItemEstoque): string =>
-  formatarQtdExibicao(Number(item.quantidadeAtual), item.unidadeExibicao)
+  item.unidadeMedida === 'GRAMA' || item.unidadeMedida === 'KILO'
+    ? formatarQtdPeso(Number(item.quantidadeAtual))
+    : formatarQtdExibicao(Number(item.quantidadeAtual), item.unidadeExibicao)
 
 const formatarQuantidadeMinima = (item: ItemEstoque): string =>
-  formatarQtdExibicao(Number(item.quantidadeMinima), item.unidadeExibicao)
+  item.unidadeMedida === 'GRAMA' || item.unidadeMedida === 'KILO'
+    ? formatarQtdPeso(Number(item.quantidadeMinima))
+    : formatarQtdExibicao(Number(item.quantidadeMinima), item.unidadeExibicao)
 
 export default function EstoquePage() {
   const [itens, setItens] = useState<ItemEstoque[]>([])
@@ -450,7 +464,58 @@ function HistoricoModal({ onClose }: { onClose: () => void }) {
   const formatarData = (data: string) =>
     new Date(data).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 
+  // Quantidade com a unidade certa: itens em grama/kilo mostram peso, o resto mostra "un."
+  const formatarQtdRegistro = (registro: any): string => {
+    const qtd = Number(registro.quantidade)
+    const unidadeMedida = registro.itemEstoque?.unidadeMedida
+    if (unidadeMedida === 'GRAMA' || unidadeMedida === 'KILO') {
+      return qtd >= 1000 ? `${(qtd / 1000).toFixed(qtd % 1000 === 0 ? 0 : 2)} kg` : `${qtd} g`
+    }
+    return `${qtd} un.`
+  }
+
   const temFiltro = filtroTipo || dataInicio || dataFim
+
+  // Agrupa registros de SAIDA/ENTRADA que vieram do mesmo pedido (composição de um
+  // produto) num único cartão "2x Pão com Linguiça" com os ingredientes por dentro —
+  // em vez de uma linha solta por ingrediente. Registros sem pedidoId (ajuste manual,
+  // entrada de fornecedor, criação/edição/remoção de item) continuam individuais.
+  const agruparPorPedido = (registros: any[]) => {
+    const grupos: any[] = []
+    const porPedido = new Map<string, any[]>()
+
+    for (const registro of registros) {
+      if (registro.pedido?.id) {
+        const lista = porPedido.get(registro.pedido.id) || []
+        lista.push(registro)
+        porPedido.set(registro.pedido.id, lista)
+      } else {
+        grupos.push({ tipo: 'individual', registro })
+      }
+    }
+
+    for (const [pedidoId, itens] of Array.from(porPedido)) {
+      grupos.push({
+        tipo: 'pedido',
+        pedidoId,
+        produtoNome: itens[0].pedido.produto?.nome || 'Produto',
+        quantidade: itens[0].pedido.quantidade,
+        tipoAcao: itens[0].tipoAcao,
+        registradoEm: itens[0].registradoEm,
+        registradoPor: itens[0].registradoPor,
+        itens,
+      })
+    }
+
+    // Mantém ordem cronológica (mais recente primeiro), usando o registro mais novo de cada grupo
+    grupos.sort((a, b) => {
+      const dataA = a.tipo === 'pedido' ? a.registradoEm : a.registro.registradoEm
+      const dataB = b.tipo === 'pedido' ? b.registradoEm : b.registro.registradoEm
+      return new Date(dataB).getTime() - new Date(dataA).getTime()
+    })
+
+    return grupos
+  }
 
   return (
     <Modal open onClose={onClose} title="Histórico de Estoque" size="xl">
@@ -502,45 +567,112 @@ function HistoricoModal({ onClose }: { onClose: () => void }) {
           {/* Linha vertical da timeline */}
           <div className="absolute left-[7px] top-2 bottom-2 w-px bg-border" />
           <div className="space-y-4">
-            {historico.map((registro: any) => {
-              const cfg = cfgAcao(registro.tipoAcao)
-              return (
-                <div key={registro.id} className="relative">
-                  {/* Ponto na timeline */}
-                  <span className={`absolute -left-6 top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white ring-1 ring-gray-200 ${cfg.dot}`} />
-                  <div className="bg-surface border border-border rounded-lg p-3 hover:shadow-sm transition-shadow">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`px-2 py-0.5 text-xs font-semibold rounded ${cfg.chip}`}>{cfg.label}</span>
-                          {registro.itemEstoque && (
-                            <span className="text-sm font-semibold text-text">{registro.itemEstoque.nome}</span>
-                          )}
+            {agruparPorPedido(historico).map((grupo: any) => {
+              if (grupo.tipo === 'individual') {
+                const registro = grupo.registro
+                const cfg = cfgAcao(registro.tipoAcao)
+                return (
+                  <div key={registro.id} className="relative">
+                    <span className={`absolute -left-6 top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white ring-1 ring-gray-200 ${cfg.dot}`} />
+                    <div className="bg-surface border border-border rounded-lg p-3 hover:shadow-sm transition-shadow">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`px-2 py-0.5 text-xs font-semibold rounded ${cfg.chip}`}>{cfg.label}</span>
+                            {registro.itemEstoque && (
+                              <span className="text-sm font-semibold text-text">{registro.itemEstoque.nome}</span>
+                            )}
+                          </div>
+                          <p className="text-xs text-text-subtle mt-1">{registro.descricao}</p>
+                          <div className="flex items-center gap-2 mt-1.5 text-xs text-text-subtle flex-wrap">
+                            <span>{formatarData(registro.registradoEm)}</span>
+                            <span>•</span>
+                            <span>{registro.registradoPor.nome}</span>
+                            {registro.motivo && (<><span>•</span><span>{registro.motivo}</span></>)}
+                          </div>
                         </div>
-                        <p className="text-xs text-text-subtle mt-1">{registro.descricao}</p>
-                        <div className="flex items-center gap-2 mt-1.5 text-xs text-text-subtle flex-wrap">
-                          <span>{formatarData(registro.registradoEm)}</span>
-                          <span>•</span>
-                          <span>{registro.registradoPor.nome}</span>
-                          {registro.motivo && (<><span>•</span><span>{registro.motivo}</span></>)}
-                        </div>
+                        {registro.quantidade != null && Number(registro.quantidade) > 0 && (
+                          <span className={`text-sm font-bold whitespace-nowrap ${
+                            cfg.sinal === '+' ? 'text-success' : cfg.sinal === '-' ? 'text-danger' : 'text-text-muted'
+                          }`}>
+                            {cfg.sinal}{formatarQtdRegistro(registro)}
+                          </span>
+                        )}
                       </div>
-                      {registro.quantidade != null && Number(registro.quantidade) > 0 && (
-                        <span className={`text-sm font-bold whitespace-nowrap ${
-                          cfg.sinal === '+' ? 'text-success' : cfg.sinal === '-' ? 'text-danger' : 'text-text-muted'
-                        }`}>
-                          {cfg.sinal}{Number(registro.quantidade)} un.
-                        </span>
-                      )}
                     </div>
                   </div>
-                </div>
+                )
+              }
+
+              // Grupo de pedido: um cartão com o produto vendido/cancelado,
+              // expansível para ver a composição (ingredientes) detalhada.
+              const cfg = cfgAcao(grupo.tipoAcao)
+              return (
+                <GrupoPedidoCard
+                  key={grupo.pedidoId}
+                  grupo={grupo}
+                  cfg={cfg}
+                  formatarData={formatarData}
+                  formatarQtdRegistro={formatarQtdRegistro}
+                />
               )
             })}
           </div>
         </div>
       )}
     </Modal>
+  )
+}
+
+// Cartão expansível de um pedido: mostra "2x Pão com Linguiça" fechado,
+// e a lista de ingredientes descontados/devolvidos ao expandir.
+function GrupoPedidoCard({ grupo, cfg, formatarData, formatarQtdRegistro }: {
+  grupo: any
+  cfg: { label: string; dot: string; chip: string; sinal: '+' | '-' | '' }
+  formatarData: (data: string) => string
+  formatarQtdRegistro: (registro: any) => string
+}) {
+  const [aberto, setAberto] = useState(false)
+
+  return (
+    <div className="relative">
+      <span className={`absolute -left-6 top-1.5 w-3.5 h-3.5 rounded-full border-2 border-white ring-1 ring-gray-200 ${cfg.dot}`} />
+      <div className="bg-surface border border-border rounded-lg p-3 hover:shadow-sm transition-shadow">
+        <button
+          type="button"
+          onClick={() => setAberto(!aberto)}
+          className="w-full flex items-start justify-between gap-3 text-left"
+        >
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`px-2 py-0.5 text-xs font-semibold rounded ${cfg.chip}`}>{cfg.label}</span>
+              <span className="text-sm font-semibold text-text">{grupo.quantidade}x {grupo.produtoNome}</span>
+              <span className="text-xs text-text-subtle">({grupo.itens.length} {grupo.itens.length === 1 ? 'ingrediente' : 'ingredientes'})</span>
+            </div>
+            <div className="flex items-center gap-2 mt-1.5 text-xs text-text-subtle flex-wrap">
+              <span>{formatarData(grupo.registradoEm)}</span>
+              <span>•</span>
+              <span>{grupo.registradoPor.nome}</span>
+            </div>
+          </div>
+          <svg className={`w-4 h-4 text-text-subtle flex-shrink-0 mt-1 transition-transform ${aberto ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        {aberto && (
+          <div className="mt-3 pt-3 border-t border-border space-y-2">
+            {grupo.itens.map((registro: any) => (
+              <div key={registro.id} className="flex items-center justify-between text-sm">
+                <span className="text-text-muted">{registro.itemEstoque?.nome}</span>
+                <span className={`font-medium ${cfg.sinal === '+' ? 'text-success' : cfg.sinal === '-' ? 'text-danger' : 'text-text-muted'}`}>
+                  {cfg.sinal}{formatarQtdRegistro(registro)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -673,7 +805,9 @@ function ItemModal({
             </div>
           </div>
 
-          {/* Exibição na tabela */}
+          {/* Exibição na tabela — só faz sentido para itens medidos em UNIDADE (agrupar em caixa/fardo).
+              Itens em GRAMA/KILO exibem automaticamente em Kg, sem precisar dessa opção. */}
+          {formData.unidadeMedida === 'UNIDADE' && (
           <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
             <p className="text-xs font-bold text-orange-800 uppercase tracking-wide mb-2">Exibição na tabela de estoque</p>
             <div>
@@ -694,6 +828,7 @@ function ItemModal({
               </p>
             )}
           </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-bold mb-1 text-text">Quantidade Atual</label>
@@ -770,7 +905,8 @@ function MovimentacaoModal({
   onSave: () => void
   onClose: () => void
 }) {
-  const usaEmbalagem = (item.unidadeExibicao || 'UNIDADE') !== 'UNIDADE'
+  // Caixa/fardo só se aplica a itens medidos em UNIDADE — GRAMA/KILO nunca usa embalagem.
+  const usaEmbalagem = item.unidadeMedida === 'UNIDADE' && (item.unidadeExibicao || 'UNIDADE') !== 'UNIDADE'
   const pct = QTD_POR_EMBALAGEM[item.unidadeExibicao] || 1
   const labelEmb = item.unidadeExibicao === 'FARDO' ? 'fardo' : 'caixa'
 
