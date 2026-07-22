@@ -62,11 +62,12 @@ export default function CaixaPage() {
   const [showAbrirModal, setShowAbrirModal] = useState(false)
   const [showFecharModal, setShowFecharModal] = useState(false)
   const [observacaoFechamento, setObservacaoFechamento] = useState('')
+  const [fechandoCaixa, setFechandoCaixa] = useState(false)
   const toast = useToast()
   const user = getUser()
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<MovimentoForm>()
-  const { register: regAbrir, handleSubmit: handleAbrir, reset: resetAbrir, formState: { errors: errAbrir } } = useForm<AbrirCaixaForm>()
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting: registrandoMovimento } } = useForm<MovimentoForm>()
+  const { register: regAbrir, handleSubmit: handleAbrir, reset: resetAbrir, formState: { errors: errAbrir, isSubmitting: abrindoCaixa } } = useForm<AbrirCaixaForm>()
 
   useEffect(() => {
     loadCaixa()
@@ -99,6 +100,8 @@ export default function CaixaPage() {
   }
 
   const onFecharCaixa = async () => {
+    if (fechandoCaixa) return // evita double-submit (duplo clique, rede lenta)
+    setFechandoCaixa(true)
     try {
       await api.post('/caixas-diarios/fechar', {
         observacao: observacaoFechamento || undefined,
@@ -109,6 +112,8 @@ export default function CaixaPage() {
       toast.success('Caixa fechado com sucesso')
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Erro ao fechar caixa')
+    } finally {
+      setFechandoCaixa(false)
     }
   }
 
@@ -245,9 +250,10 @@ export default function CaixaPage() {
                   </div>
                   <button
                     type="submit"
-                    className="w-full bg-orange-500 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-orange-600 transition"
+                    disabled={registrandoMovimento}
+                    className="w-full bg-orange-500 text-white py-2.5 rounded-lg text-sm font-semibold hover:bg-orange-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Registrar
+                    {registrandoMovimento ? 'Registrando...' : 'Registrar'}
                   </button>
                 </form>
               </div>
@@ -316,8 +322,8 @@ export default function CaixaPage() {
             />
           </div>
           <div className="flex gap-3 pt-2">
-            <Button type="button" variant="secondary" fullWidth onClick={() => setShowAbrirModal(false)}>Cancelar</Button>
-            <Button type="submit" fullWidth>Abrir Caixa</Button>
+            <Button type="button" variant="secondary" fullWidth disabled={abrindoCaixa} onClick={() => setShowAbrirModal(false)}>Cancelar</Button>
+            <Button type="submit" fullWidth disabled={abrindoCaixa}>{abrindoCaixa ? 'Abrindo...' : 'Abrir Caixa'}</Button>
           </div>
         </form>
       </Modal>
@@ -359,8 +365,10 @@ export default function CaixaPage() {
               />
             </div>
             <div className="flex gap-3">
-              <Button variant="secondary" fullWidth onClick={() => setShowFecharModal(false)}>Cancelar</Button>
-              <Button variant="danger" fullWidth onClick={onFecharCaixa}>Confirmar Fechamento</Button>
+              <Button variant="secondary" fullWidth disabled={fechandoCaixa} onClick={() => setShowFecharModal(false)}>Cancelar</Button>
+              <Button variant="danger" fullWidth disabled={fechandoCaixa} onClick={onFecharCaixa}>
+                {fechandoCaixa ? 'Fechando...' : 'Confirmar Fechamento'}
+              </Button>
             </div>
           </>
         )}

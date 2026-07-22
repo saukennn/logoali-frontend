@@ -90,6 +90,7 @@ export default function SessaoMesaPage() {
   const [pagDinheiro, setPagDinheiro] = useState('')
   const [pagCartao, setPagCartao] = useState('')
   const [pagPix, setPagPix] = useState('')
+  const [pagamentoEmAndamento, setPagamentoEmAndamento] = useState(false)
 
   // Modal cancelar pedido
   const [showCancelModal, setShowCancelModal] = useState(false)
@@ -242,6 +243,7 @@ export default function SessaoMesaPage() {
 
   const handleConfirmarFechamento = async () => {
     if (contasFechando.length === 0) return
+    if (pagamentoEmAndamento) return // evita double-submit (duplo clique, rede lenta)
 
     const dinheiro = parseFloat(pagDinheiro) || 0
     const cartao = parseFloat(pagCartao) || 0
@@ -257,6 +259,7 @@ export default function SessaoMesaPage() {
       return
     }
 
+    setPagamentoEmAndamento(true)
     try {
       const contaIds = contasFechando.map((c) => c.id)
       const response = await api.post('/pagamentos', {
@@ -280,6 +283,8 @@ export default function SessaoMesaPage() {
       }
     } catch (error: any) {
       setErrorMessage(error.response?.data?.message || 'Erro ao fechar conta')
+    } finally {
+      setPagamentoEmAndamento(false)
     }
   }
 
@@ -901,15 +906,17 @@ export default function SessaoMesaPage() {
                   setShowFecharModal(false)
                   setContasFechando([])
                 }}
-                className="flex-1 py-2 border-2 border-black rounded-md font-medium hover:bg-surface-hover transition"
+                disabled={pagamentoEmAndamento}
+                className="flex-1 py-2 border-2 border-black rounded-md font-medium hover:bg-surface-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleConfirmarFechamento}
-                className="flex-1 bg-green-600 text-white py-2 rounded-md font-bold hover:bg-green-700 transition"
+                disabled={pagamentoEmAndamento}
+                className="flex-1 bg-green-600 text-white py-2 rounded-md font-bold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Confirmar Pagamento
+                {pagamentoEmAndamento ? 'Processando...' : 'Confirmar Pagamento'}
               </button>
             </div>
           </div>
