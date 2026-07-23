@@ -8,6 +8,7 @@ export interface User {
   nome: string
   email: string
   tipo: 'ADMIN' | 'GARCOM'
+  podeRemoverTaxaServico: boolean
 }
 
 export function setToken(token: string) {

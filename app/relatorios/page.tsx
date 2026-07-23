@@ -15,6 +15,7 @@ interface RelatorioDiario {
   }
   pagamentos: { dinheiro: number; pix: number; cartao: number; total: number }
   caixa: { entradas: number; suprimentos: number; despesas: number; sangrias: number; depositos: number }
+  taxaServico: { totalArrecadado: number; quantidadeContas: number }
   operacao: { totalRecebido: number; totalDespesas: number; resultado: number }
 }
 
@@ -30,6 +31,7 @@ interface RelatorioMensal {
     ticketMedio: number
   }
   receitaPorFormaPagamento: Array<{ formaPagamento: string; valor: number; percentual: number }>
+  taxaServico: { totalArrecadado: number; quantidadeContasComTaxa: number; quantidadeContasSemTaxa: number }
   receitaPorSetor: Array<{ setor: string; valor: number; quantidade: number; percentual: number }>
   movimentacaoCaixa: {
     saldoInicial: number
@@ -226,6 +228,15 @@ export default function RelatoriosPage() {
                 </div>
 
                 <div className="bg-surface-alt rounded-xl border border-border p-4">
+                  <p className="text-xs font-semibold text-text-subtle uppercase mb-3">Taxa de Serviço</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-text-muted">Arrecadado hoje</span>
+                    <span className="text-sm font-bold text-orange-600">{fmt(relatorioDiario.taxaServico.totalArrecadado)}</span>
+                  </div>
+                  <p className="text-xs text-text-subtle mt-1">{relatorioDiario.taxaServico.quantidadeContas} conta(s) com taxa cobrada</p>
+                </div>
+
+                <div className="bg-surface-alt rounded-xl border border-border p-4">
                   <p className="text-xs font-semibold text-text-subtle uppercase mb-3">Movimentos de Caixa</p>
                   <div className="space-y-2">
                     {[
@@ -283,10 +294,13 @@ export default function RelatoriosPage() {
                 accent="border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-400" />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
               <KpiCard label="Pedidos Realizados" value={String(relatorio.resumo.pedidosTotal)}
                 accent="border-border text-text" />
               <KpiCard label="Pedidos Cancelados" value={String(relatorio.resumo.pedidosCancelados)}
+                accent="border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-400" />
+              <KpiCard label="Taxa de Serviço Arrecadada" value={fmt(relatorio.taxaServico.totalArrecadado)}
+                sub={`${relatorio.taxaServico.quantidadeContasComTaxa} conta(s) com taxa`}
                 accent="border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-400" />
             </div>
 

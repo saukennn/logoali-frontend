@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Layout from '@/components/Layout'
 import api from '@/lib/api'
@@ -47,6 +47,13 @@ interface Conta {
   pedidos: Pedido[]
 }
 
+interface ItemCarrinho {
+  produto: Produto
+  quantidade: number
+  observacao: string
+  adicionaisSelecionados: Adicional[]
+}
+
 interface SessaoMesa {
   id: string
   mesa: {
@@ -84,13 +91,29 @@ export default function SessaoMesaPage() {
   const [obsTemp, setObsTemp] = useState('')
   const [qtdTemp, setQtdTemp] = useState(1)
 
+  // Carrinho local: itens ficam acumulados aqui e só são enviados (e
+  // impressos, agrupados por setor) quando o garçom clica em "Enviar Pedido"
+  const [carrinho, setCarrinho] = useState<ItemCarrinho[]>([])
+  const [enviandoPedidos, setEnviandoPedidos] = useState(false)
+
   // Modal fechar conta(s)
   const [showFecharModal, setShowFecharModal] = useState(false)
   const [contasFechando, setContasFechando] = useState<Conta[]>([])
   const [pagDinheiro, setPagDinheiro] = useState('')
   const [pagCartao, setPagCartao] = useState('')
   const [pagPix, setPagPix] = useState('')
+  const [cobrarTaxaServico, setCobrarTaxaServico] = useState(true)
   const [pagamentoEmAndamento, setPagamentoEmAndamento] = useState(false)
+  const [imprimindoConta, setImprimindoConta] = useState(false)
+  const [jaImprimiuNesteFechamento, setJaImprimiuNesteFechamento] = useState(false)
+
+  // Confirmação: perguntar se deve reimprimir o comprovante ao registrar o
+  // pagamento — evita imprimir 2x quando o garçom já usou "Imprimir Conta"
+  // antes e a conta já está na capinha do cliente.
+  const [showConfirmarImpressaoModal, setShowConfirmarImpressaoModal] = useState(false)
+
+  const TAXA_SERVICO_PERCENTUAL = 0.10 // espelha o backend só para exibição/estimativa
+  const podeEscolherTaxaServico = user?.tipo === 'ADMIN' || !!user?.podeRemoverTaxaServico
 
   // Modal cancelar pedido
   const [showCancelModal, setShowCancelModal] = useState(false)
@@ -171,24 +194,67 @@ export default function SessaoMesaPage() {
     setShowPedidoModal(true)
   }
 
-  const handleConfirmarPedido = async () => {
-    if (!selectedConta || !produtoSelecionado) return
+  // Adiciona o item ao carrinho local — nenhuma chamada de rede aqui. O
+  // pedido só é criado (e impresso) quando handleEnviarPedidos é chamado.
+  const handleConfirmarPedido = () => {
+    if (!produtoSelecionado) return
 
-    try {
-      await api.post('/pedidos', {
-        contaClienteMesaId: selectedConta,
-        produtoId: produtoSelecionado.id,
+    const adicionaisSelecionados = adicionaisDisponiveis.filter((a) =>
+      adicionaisSel.includes(a.id)
+    )
+
+    setCarrinho((prev) => [
+      ...prev,
+      {
+        produto: produtoSelecionado,
         quantidade: qtdTemp,
-        observacao: obsTemp || undefined,
-        adicionaisIds: adicionaisSel.length > 0 ? adicionaisSel : undefined,
+        observacao: obsTemp,
+        adicionaisSelecionados,
+      },
+    ])
+
+    setShowPedidoModal(false)
+    setProdutoSelecionado(null)
+  }
+
+  const handleRemoverItemCarrinho = (index: number) => {
+    setCarrinho((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  // Envia todos os itens do carrinho de uma vez. O backend cria todos os
+  // pedidos numa única transação e imprime 1 cupom por setor (não por item).
+  const handleEnviarPedidos = async () => {
+    if (!selectedConta) {
+      setErrorMessage('Selecione uma conta primeiro')
+      return
+    }
+    if (carrinho.length === 0) return
+
+    setEnviandoPedidos(true)
+    try {
+      await api.post('/pedidos/lote', {
+        contaClienteMesaId: selectedConta,
+        itens: carrinho.map((item) => ({
+          produtoId: item.produto.id,
+          quantidade: item.quantidade,
+          observacao: item.observacao || undefined,
+          adicionaisIds: item.adicionaisSelecionados.map((a) => a.id),
+        })),
       })
-      setShowPedidoModal(false)
-      setProdutoSelecionado(null)
+      setCarrinho([])
+      toast.success('Pedido enviado!')
       loadData()
     } catch (error: any) {
-      setErrorMessage(error.response?.data?.message || 'Erro ao adicionar pedido')
+      setErrorMessage(error.response?.data?.message || 'Erro ao enviar pedido')
+    } finally {
+      setEnviandoPedidos(false)
     }
   }
+
+  const totalCarrinho = carrinho.reduce((acc, item) => {
+    const adicionaisTotal = item.adicionaisSelecionados.reduce((a, ad) => a + Number(ad.preco), 0)
+    return acc + (Number(item.produto.preco) + adicionaisTotal) * item.quantidade
+  }, 0)
 
   // Toggle selecao de conta para fechamento
   const toggleContaSelecionada = (contaId: string) => {
@@ -209,6 +275,8 @@ export default function SessaoMesaPage() {
     setPagDinheiro('')
     setPagCartao('')
     setPagPix('')
+    setCobrarTaxaServico(true)
+    setJaImprimiuNesteFechamento(false)
     setShowFecharModal(true)
   }
 
@@ -241,23 +309,80 @@ export default function SessaoMesaPage() {
     abrirModalFechamento(contas)
   }
 
-  const handleConfirmarFechamento = async () => {
+  const calcularTotalConta = (conta: Conta) => {
+    return conta.pedidos
+      .filter((p) => p.status === 'ATIVO')
+      .reduce((acc, p) => {
+        const adicionaisTotal = p.adicionais.reduce((a, ad) => a + Number(ad.valorUnitario), 0)
+        return acc + (Number(p.valorUnitario) + adicionaisTotal) * p.quantidade
+      }, 0)
+  }
+
+  // Total das contas fechando: subtotal puro, e com taxa de serviço aplicada
+  // condicionalmente. Centralizado aqui para não divergir entre o que é
+  // exibido no modal e o que é validado/enviado ao backend.
+  const totalContasFechandoSemTaxa = useMemo(
+    () => contasFechando.reduce((acc, c) => acc + calcularTotalConta(c), 0),
+    [contasFechando]
+  )
+  const valorTaxaServicoFechamento = useMemo(
+    () => (cobrarTaxaServico ? Number((totalContasFechandoSemTaxa * TAXA_SERVICO_PERCENTUAL).toFixed(2)) : 0),
+    [totalContasFechandoSemTaxa, cobrarTaxaServico]
+  )
+  const totalContasFechandoComTaxa = useMemo(
+    () => Number((totalContasFechandoSemTaxa + valorTaxaServicoFechamento).toFixed(2)),
+    [totalContasFechandoSemTaxa, valorTaxaServicoFechamento]
+  )
+
+  // Gera o cupom de fechamento pro cliente conferir — não registra pagamento
+  // nem muda status da conta. Pode ser chamado quantas vezes o garçom quiser
+  // (ex.: reimprimir depois de adicionar mais itens).
+  const handleImprimirConta = async () => {
+    if (contasFechando.length === 0 || imprimindoConta) return
+
+    setImprimindoConta(true)
+    try {
+      await api.post('/pagamentos/imprimir-conta', {
+        sessaoMesaId: sessaoId,
+        contaIds: contasFechando.map((c) => c.id),
+      })
+      setJaImprimiuNesteFechamento(true)
+      toast.success('Conta enviada para impressão.')
+    } catch (error: any) {
+      setErrorMessage(error.response?.data?.message || 'Erro ao imprimir conta')
+    } finally {
+      setImprimindoConta(false)
+    }
+  }
+
+  // Valida os valores e pergunta se deve reimprimir o comprovante — evita
+  // imprimir 2x quando o garçom já usou "Imprimir Conta" antes (a conta já
+  // pode estar na capinha do cliente).
+  const handleConfirmarFechamento = () => {
     if (contasFechando.length === 0) return
     if (pagamentoEmAndamento) return // evita double-submit (duplo clique, rede lenta)
 
     const dinheiro = parseFloat(pagDinheiro) || 0
     const cartao = parseFloat(pagCartao) || 0
     const pix = parseFloat(pagPix) || 0
-
     const totalPago = dinheiro + cartao + pix
-    const totalContas = contasFechando.reduce((acc, conta) => acc + calcularTotalConta(conta), 0)
 
-    if (totalPago < totalContas - 0.01) {
+    if (totalPago < totalContasFechandoComTaxa - 0.01) {
       setErrorMessage(
-        `Valor pago (R$ ${totalPago.toFixed(2)}) e menor que o total (R$ ${totalContas.toFixed(2)})`
+        `Valor pago (R$ ${totalPago.toFixed(2)}) e menor que o total (R$ ${totalContasFechandoComTaxa.toFixed(2)})`
       )
       return
     }
+
+    setShowConfirmarImpressaoModal(true)
+  }
+
+  const executarRegistroPagamento = async (imprimirComprovante: boolean) => {
+    setShowConfirmarImpressaoModal(false)
+
+    const dinheiro = parseFloat(pagDinheiro) || 0
+    const cartao = parseFloat(pagCartao) || 0
+    const pix = parseFloat(pagPix) || 0
 
     setPagamentoEmAndamento(true)
     try {
@@ -269,6 +394,8 @@ export default function SessaoMesaPage() {
         cartao: cartao || undefined,
         pix: pix || undefined,
         registradoPorId: user?.id,
+        cobrarTaxaServico,
+        imprimirComprovante,
       })
       setShowFecharModal(false)
       setContasFechando([])
@@ -320,15 +447,6 @@ export default function SessaoMesaPage() {
     } catch (error: any) {
       setErrorMessage(error.response?.data?.message || 'Erro ao cancelar pedido')
     }
-  }
-
-  const calcularTotalConta = (conta: Conta) => {
-    return conta.pedidos
-      .filter((p) => p.status === 'ATIVO')
-      .reduce((acc, p) => {
-        const adicionaisTotal = p.adicionais.reduce((a, ad) => a + Number(ad.valorUnitario), 0)
-        return acc + (Number(p.valorUnitario) + adicionaisTotal) * p.quantidade
-      }, 0)
   }
 
   // Filtrar produtos
@@ -615,6 +733,52 @@ export default function SessaoMesaPage() {
           <div className="bg-surface rounded-lg border-2 border-black p-6 h-fit lg:sticky lg:top-20 order-1 lg:order-2">
             <h2 className="text-xl font-bold mb-3">Produtos</h2>
 
+            {/* Carrinho: itens pendentes de envio */}
+            {carrinho.length > 0 && (
+              <div className="mb-4 border-2 border-orange-500 rounded-lg p-3 bg-orange-50">
+                <p className="text-xs font-bold uppercase text-orange-700 mb-2">
+                  Pedido em montagem ({carrinho.length})
+                </p>
+                <div className="space-y-1.5 max-h-40 overflow-y-auto mb-2">
+                  {carrinho.map((item, i) => (
+                    <div key={i} className="flex justify-between items-start text-sm bg-white rounded-md px-2 py-1.5">
+                      <div className="flex-1">
+                        <span className="font-medium text-gray-800">
+                          {item.quantidade}x {item.produto.nome}
+                        </span>
+                        {item.adicionaisSelecionados.length > 0 && (
+                          <p className="text-xs text-gray-500">
+                            +{item.adicionaisSelecionados.map((a) => a.nome).join(', ')}
+                          </p>
+                        )}
+                        {item.observacao && (
+                          <p className="text-xs text-gray-500">Obs: {item.observacao}</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleRemoverItemCarrinho(i)}
+                        className="ml-2 text-red-500 hover:text-red-700 font-bold text-sm"
+                        title="Remover"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-between items-center text-sm font-bold text-gray-800 mb-2">
+                  <span>Total:</span>
+                  <span>R$ {totalCarrinho.toFixed(2)}</span>
+                </div>
+                <button
+                  onClick={handleEnviarPedidos}
+                  disabled={enviandoPedidos}
+                  className="w-full bg-orange-600 text-white py-2 rounded-md font-bold hover:bg-orange-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {enviandoPedidos ? 'Enviando...' : `Enviar Pedido (${carrinho.length})`}
+                </button>
+              </div>
+            )}
+
             {/* Busca */}
             <input
               type="text"
@@ -767,7 +931,7 @@ export default function SessaoMesaPage() {
                 onClick={handleConfirmarPedido}
                 className="flex-1 bg-orange-500 text-white py-2 rounded-md font-bold hover:bg-orange-600 transition"
               >
-                Adicionar
+                Adicionar ao Pedido
               </button>
             </div>
           </div>
@@ -819,16 +983,56 @@ export default function SessaoMesaPage() {
                   )}
                 </div>
               ))}
-              <div className="border-t-2 border-black pt-2 flex justify-between">
-                <span className="font-bold">Total:</span>
-                <span className="font-bold text-orange-600">
-                  R${' '}
-                  {contasFechando
-                    .reduce((acc, c) => acc + calcularTotalConta(c), 0)
-                    .toFixed(2)}
-                </span>
+              <div className="border-t-2 border-black pt-2 space-y-1">
+                <div className="flex justify-between text-sm">
+                  <span>Subtotal:</span>
+                  <span>R$ {totalContasFechandoSemTaxa.toFixed(2)}</span>
+                </div>
+                {cobrarTaxaServico && (
+                  <div className="flex justify-between text-sm">
+                    <span>Taxa de serviço (10%):</span>
+                    <span>R$ {valorTaxaServicoFechamento.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="font-bold">Total:</span>
+                  <span className="font-bold text-orange-600">
+                    R$ {totalContasFechandoComTaxa.toFixed(2)}
+                  </span>
+                </div>
               </div>
             </div>
+
+            {/* Imprimir a conta pro cliente conferir — não registra pagamento nem fecha a conta */}
+            <button
+              onClick={handleImprimirConta}
+              disabled={imprimindoConta}
+              className="w-full mb-4 py-2 border-2 border-orange-500 text-orange-600 rounded-md font-bold hover:bg-orange-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {imprimindoConta ? 'Imprimindo...' : '🖨️ Imprimir Conta'}
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex-1 border-t border-border" />
+              <span className="text-xs font-semibold text-text-subtle uppercase">Registrar Pagamento</span>
+              <div className="flex-1 border-t border-border" />
+            </div>
+
+            {podeEscolherTaxaServico ? (
+              <label className="flex items-center gap-2 p-3 border-2 border-black rounded-md bg-surface-alt cursor-pointer mb-4">
+                <input
+                  type="checkbox"
+                  checked={cobrarTaxaServico}
+                  onChange={(e) => setCobrarTaxaServico(e.target.checked)}
+                  className="w-4 h-4 accent-orange-500"
+                />
+                <span className="text-sm font-medium">Cobrar taxa de serviço (10%)</span>
+              </label>
+            ) : (
+              <div className="p-3 border border-border rounded-md bg-surface-alt mb-4 text-sm text-text-muted">
+                Taxa de serviço (10%) será cobrada nesta conta.
+              </div>
+            )}
 
             {/* Formas de pagamento */}
             <div className="space-y-3">
@@ -874,10 +1078,6 @@ export default function SessaoMesaPage() {
                   (parseFloat(pagDinheiro) || 0) +
                   (parseFloat(pagCartao) || 0) +
                   (parseFloat(pagPix) || 0)
-                const totalContas = contasFechando.reduce(
-                  (acc, c) => acc + calcularTotalConta(c),
-                  0
-                )
                 if (totalPago <= 0) return null
                 return (
                   <div className="bg-green-50 rounded-lg p-3 text-sm text-gray-800">
@@ -887,11 +1087,11 @@ export default function SessaoMesaPage() {
                         R$ {totalPago.toFixed(2)}
                       </span>
                     </div>
-                    {totalPago > totalContas && (
+                    {totalPago > totalContasFechandoComTaxa && (
                       <div className="flex justify-between mt-1">
                         <span>Troco:</span>
                         <span className="font-bold">
-                          R$ {(totalPago - totalContas).toFixed(2)}
+                          R$ {(totalPago - totalContasFechandoComTaxa).toFixed(2)}
                         </span>
                       </div>
                     )}
@@ -916,7 +1116,37 @@ export default function SessaoMesaPage() {
                 disabled={pagamentoEmAndamento}
                 className="flex-1 bg-green-600 text-white py-2 rounded-md font-bold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {pagamentoEmAndamento ? 'Processando...' : 'Confirmar Pagamento'}
+                {pagamentoEmAndamento ? 'Processando...' : 'Registrar Pagamento'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmar Impressão do Comprovante (ao registrar pagamento) */}
+      {showConfirmarImpressaoModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+          <div className="bg-surface rounded-lg border-2 border-black p-6 w-full max-w-sm mx-4">
+            <h2 className="text-lg font-bold mb-2">Imprimir comprovante?</h2>
+            <p className="text-sm text-text-muted mb-6">
+              {jaImprimiuNesteFechamento
+                ? 'Você já imprimiu a conta antes. Deseja imprimir o comprovante de pagamento também?'
+                : 'Deseja imprimir o comprovante desta conta?'}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => executarRegistroPagamento(false)}
+                disabled={pagamentoEmAndamento}
+                className="flex-1 py-2 border-2 border-black rounded-md font-medium hover:bg-surface-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Não imprimir
+              </button>
+              <button
+                onClick={() => executarRegistroPagamento(true)}
+                disabled={pagamentoEmAndamento}
+                className="flex-1 bg-green-600 text-white py-2 rounded-md font-bold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Imprimir
               </button>
             </div>
           </div>

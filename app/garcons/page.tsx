@@ -10,6 +10,7 @@ interface Garcom {
   email: string
   tipo: string
   ativo: boolean
+  podeRemoverTaxaServico: boolean
   criadoEm: string
 }
 
@@ -44,7 +45,7 @@ export default function GarconsPage() {
 
   const [showModal, setShowModal] = useState(false)
   const [editando, setEditando] = useState<Garcom | null>(null)
-  const [formData, setFormData] = useState({ nome: '', email: '', senha: '' })
+  const [formData, setFormData] = useState({ nome: '', email: '', senha: '', podeRemoverTaxaServico: false })
   const [formError, setFormError] = useState<string | null>(null)
   const [salvando, setSalvando] = useState(false)
 
@@ -89,14 +90,14 @@ export default function GarconsPage() {
 
   const abrirCriar = () => {
     setEditando(null)
-    setFormData({ nome: '', email: '', senha: '' })
+    setFormData({ nome: '', email: '', senha: '', podeRemoverTaxaServico: false })
     setFormError(null)
     setShowModal(true)
   }
 
   const abrirEditar = (g: Garcom) => {
     setEditando(g)
-    setFormData({ nome: g.nome, email: g.email, senha: '' })
+    setFormData({ nome: g.nome, email: g.email, senha: '', podeRemoverTaxaServico: g.podeRemoverTaxaServico })
     setFormError(null)
     setShowModal(true)
   }
@@ -116,7 +117,11 @@ export default function GarconsPage() {
       setFormError(null)
 
       if (editando) {
-        const payload: any = { nome: formData.nome, email: formData.email }
+        const payload: any = {
+          nome: formData.nome,
+          email: formData.email,
+          podeRemoverTaxaServico: formData.podeRemoverTaxaServico,
+        }
         if (formData.senha) payload.senha = formData.senha
         await api.patch(`/users/${editando.id}`, payload)
       } else {
@@ -125,6 +130,7 @@ export default function GarconsPage() {
           email: formData.email,
           senha: formData.senha,
           tipo: 'GARCOM',
+          podeRemoverTaxaServico: formData.podeRemoverTaxaServico,
         })
       }
 
@@ -228,6 +234,14 @@ export default function GarconsPage() {
                           <p className={`text-sm truncate ${garcomSelecionado?.id === g.id ? 'text-gray-500' : 'text-text-subtle'}`}>{g.email}</p>
                         </div>
                         <div className="flex items-center gap-2 ml-2 flex-shrink-0">
+                          {g.podeRemoverTaxaServico && (
+                            <span
+                              className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700"
+                              title="Pode retirar a taxa de serviço ao fechar conta"
+                            >
+                              Pode retirar taxa
+                            </span>
+                          )}
                           <span
                             className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                               g.ativo
@@ -488,6 +502,17 @@ export default function GarconsPage() {
                   placeholder={editando ? '••••••' : 'Mínimo 6 caracteres'}
                 />
               </div>
+              <label className="flex items-center gap-2 p-3 border rounded-lg bg-surface-alt cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.podeRemoverTaxaServico}
+                  onChange={(e) => setFormData((f) => ({ ...f, podeRemoverTaxaServico: e.target.checked }))}
+                  className="w-4 h-4 accent-orange-500"
+                />
+                <span className="text-sm font-medium text-text-muted">
+                  Pode retirar a taxa de serviço (10%) ao fechar conta
+                </span>
+              </label>
             </div>
             <div className="p-6 border-t flex gap-3 justify-end">
               <button
