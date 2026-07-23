@@ -120,6 +120,10 @@ export default function SessaoMesaPage() {
   const [pedidoCancelando, setPedidoCancelando] = useState<string | null>(null)
   const [motivoCancelamento, setMotivoCancelamento] = useState('')
 
+  // Fechar mesa vazia (aberta por engano, nenhuma conta criada ainda)
+  const [showFecharMesaVaziaModal, setShowFecharMesaVaziaModal] = useState(false)
+  const [fechandoMesaVazia, setFechandoMesaVazia] = useState(false)
+
   // Feedback via toast (setErrorMessage/setSuccessMessage mantidos como aliases)
   const toast = useToast()
   const setErrorMessage = (msg: string | null) => { if (msg) toast.error(msg) }
@@ -449,6 +453,23 @@ export default function SessaoMesaPage() {
     }
   }
 
+  // Fecha a sessão da mesa sem nenhum pagamento — só oferecido quando a mesa
+  // não tem nenhuma conta criada ainda (aberta por engano, ou não usada).
+  const handleFecharMesaVazia = async () => {
+    if (fechandoMesaVazia) return
+    setFechandoMesaVazia(true)
+    try {
+      await api.patch(`/sessoes-mesa/${sessaoId}/fechar`)
+      setShowFecharMesaVaziaModal(false)
+      toast.success('Mesa liberada.')
+      router.push('/mesas')
+    } catch (error: any) {
+      setErrorMessage(error.response?.data?.message || 'Erro ao fechar mesa')
+    } finally {
+      setFechandoMesaVazia(false)
+    }
+  }
+
   // Filtrar produtos
   const produtosFiltrados = produtos
     .filter((p) => p.ativo !== false)
@@ -493,6 +514,14 @@ export default function SessaoMesaPage() {
             >
               Voltar
             </button>
+            {sessao.contas.length === 0 && (
+              <button
+                onClick={() => setShowFecharMesaVaziaModal(true)}
+                className="px-4 py-2 border-2 border-black rounded-lg font-medium text-danger hover:bg-danger-light transition"
+              >
+                Fechar Mesa
+              </button>
+            )}
           </div>
         </div>
 
@@ -1147,6 +1176,34 @@ export default function SessaoMesaPage() {
                 className="flex-1 bg-green-600 text-white py-2 rounded-md font-bold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Imprimir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmar Fechar Mesa Vazia */}
+      {showFecharMesaVaziaModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-surface rounded-lg border-2 border-black p-6 w-full max-w-sm mx-4">
+            <h2 className="text-lg font-bold mb-2">Fechar mesa?</h2>
+            <p className="text-sm text-text-muted mb-6">
+              Esta mesa não tem nenhuma conta criada. Ao fechar, ela volta a ficar livre para outro atendimento.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowFecharMesaVaziaModal(false)}
+                disabled={fechandoMesaVazia}
+                className="flex-1 py-2 border-2 border-black rounded-md font-medium hover:bg-surface-hover transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleFecharMesaVazia}
+                disabled={fechandoMesaVazia}
+                className="flex-1 bg-danger text-white py-2 rounded-md font-bold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {fechandoMesaVazia ? 'Fechando...' : 'Fechar Mesa'}
               </button>
             </div>
           </div>

@@ -459,6 +459,10 @@ function HistoricoModal({ onClose }: { onClose: () => void }) {
     EDITADO:  { label: 'Editado',  dot: 'bg-info',    chip: 'bg-info-light text-info-dark',        sinal: '' },
     REMOVIDO: { label: 'Removido', dot: 'bg-gray-400', chip: 'bg-gray-100 text-gray-600',          sinal: '' },
   }
+  // Devolução de estoque por cancelamento de pedido: grava tipoAcao ENTRADA
+  // (tecnicamente correto, aumenta o estoque) mas não é uma compra/entrada de
+  // fornecedor — usa uma config visual própria pra não confundir os dois.
+  const ACAO_CANCELAMENTO = { label: 'Cancelado', dot: 'bg-warning', chip: 'bg-warning-light text-warning-dark', sinal: '+' as const }
   const cfgAcao = (tipo: string) => ACAO_CONFIG[tipo] || { label: tipo, dot: 'bg-gray-400', chip: 'bg-gray-100 text-gray-600', sinal: '' as const }
 
   const formatarData = (data: string) =>
@@ -476,31 +480,41 @@ function HistoricoModal({ onClose }: { onClose: () => void }) {
 
   const temFiltro = filtroTipo || dataInicio || dataFim
 
-  // Agrupa registros de SAIDA/ENTRADA que vieram do mesmo pedido (composição de um
-  // produto) num único cartão "2x Pão com Linguiça" com os ingredientes por dentro —
-  // em vez de uma linha solta por ingrediente. Registros sem pedidoId (ajuste manual,
-  // entrada de fornecedor, criação/edição/remoção de item) continuam individuais.
+  // Agrupa registros de SAIDA/ENTRADA que vieram do mesmo pedido E do mesmo
+  // evento (composição de um produto: vários ingredientes descontados/devolvidos
+  // juntos) num único cartão "2x Pão com Linguiça" com os ingredientes por dentro.
+  // A chave inclui tipoAcao porque um pedido cancelado tem 2 eventos distintos
+  // com o mesmo pedidoId — a SAIDA original (venda) e a ENTRADA da devolução —
+  // que precisam virar 2 cards separados, não 1 card com as linhas misturadas.
+  // Registros sem pedidoId (ajuste manual, entrada de fornecedor,
+  // criação/edição/remoção de item) continuam individuais.
   const agruparPorPedido = (registros: any[]) => {
     const grupos: any[] = []
     const porPedido = new Map<string, any[]>()
 
     for (const registro of registros) {
       if (registro.pedido?.id) {
-        const lista = porPedido.get(registro.pedido.id) || []
+        const chave = `${registro.pedido.id}:${registro.tipoAcao}`
+        const lista = porPedido.get(chave) || []
         lista.push(registro)
-        porPedido.set(registro.pedido.id, lista)
+        porPedido.set(chave, lista)
       } else {
         grupos.push({ tipo: 'individual', registro })
       }
     }
 
-    for (const [pedidoId, itens] of Array.from(porPedido)) {
+    for (const [chave, itens] of Array.from(porPedido)) {
+      const tipoAcao = itens[0].tipoAcao
       grupos.push({
         tipo: 'pedido',
-        pedidoId,
+        pedidoId: chave,
         produtoNome: itens[0].pedido.produto?.nome || 'Produto',
         quantidade: itens[0].pedido.quantidade,
-        tipoAcao: itens[0].tipoAcao,
+        tipoAcao,
+        // Todo grupo com pedidoId e tipoAcao ENTRADA só pode ser devolução de
+        // cancelamento (venda normal sempre grava SAIDA) — nunca compra de
+        // fornecedor, que não tem pedidoId associado.
+        ehDevolucaoCancelamento: tipoAcao === 'ENTRADA',
         registradoEm: itens[0].registradoEm,
         registradoPor: itens[0].registradoPor,
         itens,
@@ -606,7 +620,7 @@ function HistoricoModal({ onClose }: { onClose: () => void }) {
 
               // Grupo de pedido: um cartão com o produto vendido/cancelado,
               // expansível para ver a composição (ingredientes) detalhada.
-              const cfg = cfgAcao(grupo.tipoAcao)
+              const cfg = grupo.ehDevolucaoCancelamento ? ACAO_CANCELAMENTO : cfgAcao(grupo.tipoAcao)
               return (
                 <GrupoPedidoCard
                   key={grupo.pedidoId}

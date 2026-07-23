@@ -46,6 +46,10 @@ export default function ContasPagarPage() {
   const [contas, setContas] = useState<ContaPagar[]>([])
   const [loading, setLoading] = useState(true)
   const [filtroStatus, setFiltroStatus] = useState('')
+  const [filtroCategoria, setFiltroCategoria] = useState('')
+  const [mesAno, setMesAno] = useState('')
+  const [buscaInput, setBuscaInput] = useState('')
+  const [busca, setBusca] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [contaPagar, setContaPagar] = useState<ContaPagar | null>(null)
@@ -58,12 +62,28 @@ export default function ContasPagarPage() {
   })
   const [arquivo, setArquivo] = useState<File | null>(null)
 
-  useEffect(() => { load() }, [filtroStatus])
+  useEffect(() => { load() }, [filtroStatus, filtroCategoria, busca, mesAno])
+
+  // Debounce simples: só atualiza `busca` (e dispara o load) 400ms depois de
+  // parar de digitar, evitando 1 request por tecla.
+  useEffect(() => {
+    const timer = setTimeout(() => setBusca(buscaInput), 400)
+    return () => clearTimeout(timer)
+  }, [buscaInput])
 
   const load = async () => {
     try {
       setLoading(true)
-      const q = filtroStatus ? `?status=${filtroStatus}` : ''
+      const params = new URLSearchParams()
+      if (filtroStatus) params.set('status', filtroStatus)
+      if (filtroCategoria) params.set('categoria', filtroCategoria)
+      if (busca) params.set('busca', busca)
+      if (mesAno) {
+        const [ano, mes] = mesAno.split('-')
+        params.set('ano', ano)
+        params.set('mes', mes)
+      }
+      const q = params.toString() ? `?${params.toString()}` : ''
       const res = await api.get(`/contas-pagar${q}`)
       setContas(res.data)
     } catch {
@@ -213,8 +233,8 @@ export default function ContasPagarPage() {
           </div>
         </div>
 
-        {/* Filtro */}
-        <div className="flex gap-2 mb-5">
+        {/* Filtro por status */}
+        <div className="flex gap-2 mb-3">
           {[{ v: '', l: 'Todas' }, { v: 'PENDENTE', l: 'Pendentes' }, { v: 'PAGO', l: 'Pagas' }].map((f) => (
             <button
               key={f.v}
@@ -226,6 +246,39 @@ export default function ContasPagarPage() {
               {f.l}
             </button>
           ))}
+        </div>
+
+        {/* Filtros: categoria, mês, busca por título */}
+        <div className="flex flex-wrap gap-2 mb-5">
+          <select
+            value={filtroCategoria}
+            onChange={(e) => setFiltroCategoria(e.target.value)}
+            className="px-3 py-1.5 border border-border rounded-lg text-sm bg-surface text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-500"
+          >
+            <option value="">Todas as categorias</option>
+            {CATEGORIAS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+          <input
+            type="month"
+            value={mesAno}
+            onChange={(e) => setMesAno(e.target.value)}
+            className="px-3 py-1.5 border border-border rounded-lg text-sm bg-surface text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-500"
+          />
+          <input
+            type="text"
+            value={buscaInput}
+            onChange={(e) => setBuscaInput(e.target.value)}
+            placeholder="Buscar por título..."
+            className="flex-1 min-w-[160px] px-3 py-1.5 border border-border rounded-lg text-sm bg-surface text-text-muted focus:outline-none focus:ring-2 focus:ring-brand-500"
+          />
+          {(filtroCategoria || mesAno || buscaInput) && (
+            <button
+              onClick={() => { setFiltroCategoria(''); setMesAno(''); setBuscaInput('') }}
+              className="px-3 py-1.5 text-sm font-medium text-text-muted hover:text-danger transition-colors"
+            >
+              Limpar
+            </button>
+          )}
         </div>
 
         {/* Lista */}

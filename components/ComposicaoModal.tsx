@@ -65,7 +65,7 @@ export default function ComposicaoModal({ produto, onClose, onSave }: Composicao
   }
 
   const handleAddItem = () => {
-    setComposicao([...composicao, { itemEstoqueId: '', quantidade: 1, unidade: 'unidades' }])
+    setComposicao([...composicao, { itemEstoqueId: '', quantidade: 1, unidade: 'UNIDADE' }])
   }
 
   const handleRemoveItem = (index: number) => {
@@ -223,13 +223,19 @@ export default function ComposicaoModal({ produto, onClose, onSave }: Composicao
                           </div>
                           <div className="md:col-span-3">
                             <label className="block text-xs font-medium mb-1 text-text-muted">Unidade</label>
-                            <input
-                              type="text"
+                            <select
                               value={item.unidade}
                               onChange={(e) => handleChangeItem(index, 'unidade', e.target.value)}
                               className="w-full px-2 py-2 border border-border rounded-md text-sm bg-surface text-text"
-                              placeholder="ex: unidades, gramas"
-                            />
+                            >
+                              <option value="UNIDADE">Unidade</option>
+                              <option value="GRAMA">Grama</option>
+                              <option value="KILO">Kilo</option>
+                              <option value="LITRO">Litro</option>
+                              <option value="ML">ML</option>
+                              <option value="CAIXA">Caixa</option>
+                              <option value="PACOTE">Pacote</option>
+                            </select>
                           </div>
                           <div className="md:col-span-1">
                             <button
