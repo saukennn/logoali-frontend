@@ -42,16 +42,30 @@ export default function Layout({ children }: LayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const user = getUser()
-  // getUser() faz JSON.parse a cada chamada (objeto novo por render) — usar só
-  // o booleano nas deps evita recriar o efeito indefinidamente.
-  const isLoggedOut = !user
+
+  // getUser() lê de um cookie (document.cookie), que não existe durante o SSR
+  // — no servidor sempre retornaria null. Ler direto no render faria o server
+  // renderizar "deslogado" e o client hidratar "logado" com o mesmo componente,
+  // uma árvore DOM diferente em cada lado. O React descarta essa árvore inteira
+  // e re-renderiza do zero no cliente ao detectar o mismatch — na prática, um
+  // flash da página montando pela segunda vez, com o layout momentaneamente
+  // quebrado (sidebar/conteúdo ainda não posicionados) até assentar de novo.
+  // Por isso: sempre montar só depois do efeito rodar no cliente (mounted),
+  // e só então ler o usuário — assim servidor e cliente concordam no primeiro
+  // render (ambos mostram o skeleton), sem hydration mismatch.
+  const [mounted, setMounted] = useState(false)
+  const [user, setUser] = useState<ReturnType<typeof getUser>>(null)
 
   useEffect(() => {
-    if (isLoggedOut) router.push('/login')
-  }, [isLoggedOut, router])
+    setMounted(true)
+    setUser(getUser())
+  }, [])
 
-  if (!user) return null
+  useEffect(() => {
+    if (mounted && !user) router.push('/login')
+  }, [mounted, user, router])
+
+  if (!mounted || !user) return null
 
   const filtered = menuItems.filter((item) => !item.adminOnly || user.tipo === 'ADMIN')
 
@@ -113,7 +127,7 @@ export default function Layout({ children }: LayoutProps) {
   )
 
   return (
-    <div className="min-h-screen bg-surface-alt">
+    <div className="min-h-screen bg-surface-alt md:flex">
       {/* AppBar mobile */}
       <header className="md:hidden fixed top-0 inset-x-0 z-30 bg-ink border-b border-black/20 h-14 flex items-center px-4">
         <button onClick={() => setMobileOpen(true)} className="text-white p-1.5 -ml-1.5" aria-label="Abrir menu">
@@ -127,8 +141,12 @@ export default function Layout({ children }: LayoutProps) {
         <ThemeToggle className="text-white hover:bg-white/10 hover:text-white" />
       </header>
 
-      {/* Sidebar desktop (fixa) */}
-      <aside className="hidden md:flex md:fixed md:inset-y-0 md:left-0 md:w-60 border-r border-border z-20">
+      {/* Sidebar desktop — irmã do <main> no mesmo flex container (não usa
+          position:fixed), então nunca pode sobrepor o conteúdo: o espaço que
+          ela ocupa é sempre reservado pelo próprio fluxo do layout, sem
+          depender de uma margem separada no <main> ficar sincronizada com a
+          largura dela. */}
+      <aside className="hidden md:flex md:w-60 md:flex-shrink-0 md:sticky md:top-0 md:h-screen border-r border-border z-20">
         {drawer}
       </aside>
 
@@ -143,8 +161,14 @@ export default function Layout({ children }: LayoutProps) {
       )}
 
       {/* Conteúdo principal */}
-      <main className="md:ml-60 pt-14 md:pt-0 min-h-screen">
-        <div className="p-4 sm:p-6">
+      <main className="flex-1 min-w-0 pt-14 md:pt-0 min-h-screen">
+        {/* Padding horizontal cresce em telas médias (md/lg) para sempre dar
+            respiro entre a borda da sidebar e o conteúdo — sem isso, o
+            conteúdo (que também tem max-w-7xl mx-auto) só ganha espaço lateral
+            quando a viewport é larga o bastante para sobrar folga de
+            centralização; abaixo disso ficava colado direto na borda direita
+            da sidebar. */}
+        <div className="p-4 sm:p-6 md:px-8 lg:px-10">
           {children}
         </div>
       </main>
