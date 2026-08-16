@@ -37,6 +37,17 @@ const formatarQtdPeso = (qtdGramas: number): string => {
   return `${Number.isInteger(qtd) ? qtd : qtd.toFixed(3)} g`
 }
 
+// Mesmo padrão de formatarQtdPeso, mas para ML/LITRO — itens como destilados e
+// bebidas dosadas por volume (Vodka, Rum, Gin, Monin, Aperol, Água com gás)
+// também não usam caixa/fardo, exibem em Litro automaticamente quando >= 1000ml.
+const formatarQtdVolume = (qtdMl: number): string => {
+  const qtd = Number(qtdMl)
+  if (qtd >= 1000) {
+    return `${(qtd / 1000).toFixed(qtd % 1000 === 0 ? 0 : 2)} L`
+  }
+  return `${Number.isInteger(qtd) ? qtd : qtd.toFixed(3)} ml`
+}
+
 const formatarQtdExibicao = (qtdUnidades: number, unidadeExibicao: string): string => {
   const qtd = Number(qtdUnidades)
   const unid = unidadeExibicao || 'UNIDADE'
@@ -59,11 +70,15 @@ const formatarQtdExibicao = (qtdUnidades: number, unidadeExibicao: string): stri
 const formatarQuantidade = (item: ItemEstoque): string =>
   item.unidadeMedida === 'GRAMA' || item.unidadeMedida === 'KILO'
     ? formatarQtdPeso(Number(item.quantidadeAtual))
+    : item.unidadeMedida === 'ML' || item.unidadeMedida === 'LITRO'
+    ? formatarQtdVolume(Number(item.quantidadeAtual))
     : formatarQtdExibicao(Number(item.quantidadeAtual), item.unidadeExibicao)
 
 const formatarQuantidadeMinima = (item: ItemEstoque): string =>
   item.unidadeMedida === 'GRAMA' || item.unidadeMedida === 'KILO'
     ? formatarQtdPeso(Number(item.quantidadeMinima))
+    : item.unidadeMedida === 'ML' || item.unidadeMedida === 'LITRO'
+    ? formatarQtdVolume(Number(item.quantidadeMinima))
     : formatarQtdExibicao(Number(item.quantidadeMinima), item.unidadeExibicao)
 
 export default function EstoquePage() {
@@ -468,12 +483,16 @@ function HistoricoModal({ onClose }: { onClose: () => void }) {
   const formatarData = (data: string) =>
     new Date(data).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 
-  // Quantidade com a unidade certa: itens em grama/kilo mostram peso, o resto mostra "un."
+  // Quantidade com a unidade certa: grama/kilo mostram peso, litro/ml mostram
+  // volume, o resto (UNIDADE, CAIXA, PACOTE) mostra "un."
   const formatarQtdRegistro = (registro: any): string => {
     const qtd = Number(registro.quantidade)
     const unidadeMedida = registro.itemEstoque?.unidadeMedida
     if (unidadeMedida === 'GRAMA' || unidadeMedida === 'KILO') {
       return qtd >= 1000 ? `${(qtd / 1000).toFixed(qtd % 1000 === 0 ? 0 : 2)} kg` : `${qtd} g`
+    }
+    if (unidadeMedida === 'ML' || unidadeMedida === 'LITRO') {
+      return qtd >= 1000 ? `${(qtd / 1000).toFixed(qtd % 1000 === 0 ? 0 : 2)} L` : `${qtd} ml`
     }
     return `${qtd} un.`
   }
